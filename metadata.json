@@ -1,0 +1,7 @@
+{
+  "name": "NutriSnap",
+  "description": "A web application to track nutrition and fitness by analyzing meal pictures with Gemini. Users can upload a photo of their meal, and the app will provide an estimated nutritional breakdown, including calories and macronutrients.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
