@@ -6,6 +6,14 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NutriSnap</title>
+    <script type="module">
+      // Test environment variables
+      console.log('=== HTML ENV TEST ===');
+      console.log('VITE_GEMINI_API_KEY:', import.meta.env.VITE_GEMINI_API_KEY);
+      console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('All env vars:', import.meta.env);
+      console.log('=====================');
+    </script>
 
     <link rel="stylesheet" href="/index.css">
   </head>
