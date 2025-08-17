@@ -9,29 +9,77 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+    background-color: rgb(249 250 251);
+    color: rgb(17 24 39);
+    transition: color 0.2s ease, background-color 0.2s ease;
   }
   
   .dark body {
-    @apply bg-gray-900 text-gray-100;
+    background-color: rgb(17 24 39);
+    color: rgb(243 244 246);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    background-color: rgb(37 99 235);
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-primary:hover {
+    background-color: rgb(29 78 216);
   }
   
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    background-color: rgb(229 231 235);
+    color: rgb(31 41 55);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-secondary:hover {
+    background-color: rgb(209 213 219);
   }
   
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    padding: 1.5rem;
+    border: 1px solid rgb(229 231 235);
+  }
+  
+  .dark .card {
+    background-color: rgb(31 41 55);
+    border-color: rgb(55 65 81);
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    background-color: white;
+    color: rgb(17 24 39);
+  }
+  
+  .input-field:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgb(59 130 246);
+    border-color: transparent;
+  }
+  
+  .dark .input-field {
+    border-color: rgb(75 85 99);
+    background-color: rgb(55 65 81);
+    color: rgb(243 244 246);
   }
 }
 
@@ -46,6 +94,9 @@
   }
   
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    outline: none;
+    ring: 2px;
+    ring-color: rgb(59 130 246);
+    ring-offset: 2px;
   }
 }

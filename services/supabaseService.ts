@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { MealEntry, UserProfile } from '../types'
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
@@ -122,14 +122,23 @@ export const profileService = {
 export const authService = {
   // Get current user
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error) {
-      console.error('Error getting current user:', error)
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      if (error) {
+        // Only log unexpected errors, not auth session missing which is expected for new users
+        if (error.message && !error.message.includes('Auth session missing') && !error.message.includes('No user found')) {
+          console.error('Error getting current user:', error)
+        }
+        return null
+      }
+
+      return user
+    } catch (err) {
+      // Handle any unexpected errors
+      console.error('Unexpected error getting current user:', err)
       return null
     }
-
-    return user
   },
 
   // Sign out

@@ -7,12 +7,13 @@ import { fileToBase64 } from './utils/helpers';
 import Loader from './components/Loader';
 import AuthView from './components/AuthView';
 import CameraIcon from './components/icons/CameraIcon';
+import { mealService, profileService, authService } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
-  const [userProfile] = useState<UserProfile>({
+  const [userProfile, setUserProfile] = useState<UserProfile>({
     name: 'Alex',
     age: 30,
     weightKg: 75,
@@ -20,24 +21,117 @@ const App: React.FC = () => {
     activityLevel: 'moderate',
     dailyCalorieGoal: 2500,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => {
-    // In a real app, this would also clear tokens, etc.
-    setIsAuthenticated(false);
-    // Reset to dashboard view for next login
-    setCurrentView('dashboard');
+  // Load user data on app start
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Check if user is authenticated
+        const user = await authService.getCurrentUser();
+        if (user) {
+          setIsAuthenticated(true);
+          await loadUserData(user.id);
+        }
+      } catch (err) {
+        console.error('Error initializing app:', err);
+        // Don't set error for auth session missing - this is expected for new users
+        if (err instanceof Error && !err.message.includes('Auth session missing')) {
+          setError('Failed to initialize app');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  const loadUserData = async (userId: string) => {
+    try {
+      // Load user profile
+      const profile = await profileService.getProfile(userId);
+      if (profile) {
+        setUserProfile(profile);
+      }
+
+      // Load meal entries
+      const meals = await mealService.getMeals(userId);
+      setMealEntries(meals);
+    } catch (err) {
+      console.error('Error loading user data:', err);
+      setError('Failed to load user data');
+    }
   };
 
-  const addMealEntry = (nutrients: Nutrients, imageUrl: string) => {
-    const newEntry: MealEntry = {
-      ...nutrients,
-      id: new Date().toISOString() + Math.random(),
-      date: new Date().toISOString(),
-      imageUrl,
-    };
-    setMealEntries(prev => [newEntry, ...prev]);
-    setCurrentView('dashboard');
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true);
+      // For demo purposes, we'll use a mock user ID
+      // In a real app, this would come from Supabase Auth
+      const mockUserId = 'demo-user-123';
+      await loadUserData(mockUserId);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      setIsAuthenticated(false);
+      setCurrentView('dashboard');
+      setMealEntries([]);
+      setUserProfile({
+        name: 'Alex',
+        age: 30,
+        weightKg: 75,
+        heightCm: 180,
+        activityLevel: 'moderate',
+        dailyCalorieGoal: 2500,
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  const addMealEntry = async (nutrients: Nutrients, imageUrl: string) => {
+    try {
+      setIsLoading(true);
+      const newEntry: MealEntry = {
+        ...nutrients,
+        id: new Date().toISOString() + Math.random(),
+        date: new Date().toISOString(),
+        imageUrl,
+        user_id: 'demo-user-123', // In real app, get from auth context
+      };
+
+      // Save to Supabase database
+      const savedMeal = await mealService.createMeal(newEntry);
+      
+      if (savedMeal) {
+        // Update local state with the saved meal
+        setMealEntries(prev => [savedMeal, ...prev]);
+        
+        // Show success message and redirect to dashboard
+        setSuccessMessage(`Successfully added ${nutrients.mealName}!`);
+        setCurrentView('dashboard');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving meal:', err);
+      setError('Failed to save meal. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const todaysEntries = useMemo(() => {
@@ -60,6 +154,26 @@ const App: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return <AuthView onLogin={handleLogin} />;
   }
@@ -68,6 +182,14 @@ const App: React.FC = () => {
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans text-gray-800 dark:text-gray-200">
       <div className="max-w-lg mx-auto pb-20">
         <Header view={currentView} />
+        
+        {/* Success Message */}
+        {successMessage && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+            {successMessage}
+          </div>
+        )}
+        
         <main className="p-4">
           {renderView()}
         </main>
@@ -153,8 +275,8 @@ const DashboardView: React.FC<{ entries: MealEntry[], profile: UserProfile }> = 
           <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400 mb-4">No meals logged yet today.</p>
             <button 
-              onClick={() => window.location.reload()} 
-              className="text-blue-500 hover:text-blue-600 underline"
+              onClick={() => setCurrentView('add_meal')} 
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
             >
               Add your first meal
             </button>
@@ -425,26 +547,85 @@ const ProgressView: React.FC<{ entries: MealEntry[], calorieGoal: number }> = ({
     });
   }, [entries, calorieGoal]);
 
+  // Group meals by date for meal history
+  const mealHistory = useMemo(() => {
+    const grouped = entries.reduce((acc, meal) => {
+      const date = meal.date.split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(meal);
+      return acc;
+    }, {} as Record<string, MealEntry[]>);
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => b.localeCompare(a)) // Sort by date descending
+      .slice(0, 10); // Show last 10 days
+  }, [entries]);
+
   return (
-    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-      <h3 className="text-lg font-semibold mb-4 text-center">Weekly Calorie Intake</h3>
-      {entries.length > 0 ? (
-        <div style={{ width: '100%', height: 300 }}>
-          <ResponsiveContainer>
-            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Intake" fill="#34D399" />
-              <Bar dataKey="Goal" fill="#60A5FA" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      ) : (
+    <div className="space-y-6">
+      {/* Weekly Chart */}
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+        <h3 className="text-lg font-semibold mb-4 text-center">Weekly Calorie Intake</h3>
+        {entries.length > 0 ? (
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Intake" fill="#34D399" />
+                <Bar dataKey="Goal" fill="#60A5FA" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
           <p className="text-center text-gray-500 dark:text-gray-400 py-8">Log some meals to see your progress!</p>
-      )}
+        )}
+      </div>
+
+      {/* Meal History */}
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+        <h3 className="text-lg font-semibold mb-4">Recent Meal History</h3>
+        {mealHistory.length > 0 ? (
+          <div className="space-y-3">
+            {mealHistory.map(([date, meals]) => (
+              <div key={date} className="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200">
+                    {new Date(date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </h4>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {meals.reduce((sum, meal) => sum + meal.calories, 0)} kcal
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {meals.map(meal => (
+                    <div key={meal.id} className="flex items-center space-x-3 text-sm">
+                      <img 
+                        src={meal.imageUrl} 
+                        alt={meal.mealName} 
+                        className="w-8 h-8 rounded object-cover"
+                      />
+                      <span className="flex-1">{meal.mealName}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{meal.calories} kcal</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No meals logged yet. Start tracking your nutrition!</p>
+        )}
+      </div>
     </div>
   );
 };
