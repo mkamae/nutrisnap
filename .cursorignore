@@ -1,6 +1,6 @@
 # Ignore environment files by default
-.env
 .env.example
 
-# But allow access to .env.local
+# Allow access to .env and .env.local
+!.env
 !.env.local
