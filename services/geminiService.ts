@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genAI";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Nutrients } from '../types';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
