@@ -32,6 +32,12 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onViewChange }) => {
       color: 'text-purple-600'
     },
     {
+      id: 'guided_workouts' as View,
+      label: 'Guided',
+      icon: ChartBarIcon,
+      color: 'text-orange-600'
+    },
+    {
       id: 'profile' as View,
       label: 'Profile',
       icon: UserCircleIcon,

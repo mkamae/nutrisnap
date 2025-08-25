@@ -1,0 +1,15 @@
+export { default as CameraIcon } from './CameraIcon';
+export { default as ChartBarIcon } from './ChartBarIcon';
+export { default as HomeIcon } from './HomeIcon';
+export { default as LogoIcon } from './LogoIcon';
+export { default as PlusCircleIcon } from './PlusCircleIcon';
+export { default as UserCircleIcon } from './UserCircleIcon';
+export { default as ClockIcon } from './ClockIcon';
+export { default as FireIcon } from './FireIcon';
+export { default as StarIcon } from './StarIcon';
+export { default as PlayIcon } from './PlayIcon';
+export { default as PauseIcon } from './PauseIcon';
+export { default as ArrowLeftIcon } from './ArrowLeftIcon';
+export { default as ArrowRightIcon } from './ArrowRightIcon';
+export { default as CheckIcon } from './CheckIcon';
+export { default as XIcon } from './XIcon';

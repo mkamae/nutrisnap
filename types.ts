@@ -115,4 +115,94 @@ export interface AuthUser {
   created_at: string;
 }
 
-export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity';
+// Guided Workout System Types
+export interface WorkoutPlan {
+  id: string;
+  user_id?: string;
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  total_exercises?: number;
+  est_calories?: number;
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
+  category?: 'strength' | 'cardio' | 'flexibility' | 'mixed' | 'hiit' | 'yoga';
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  plan_id: string;
+  day_number: number;
+  day_title?: string;
+  rest_day: boolean;
+  created_at: string;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  category: 'strength' | 'cardio' | 'flexibility' | 'balance' | 'core';
+  duration_seconds?: number;
+  reps?: number;
+  sets?: number;
+  weight_kg?: number;
+  image_url?: string;
+  gif_url?: string;
+  instructions?: string;
+  muscle_groups?: string[];
+  equipment_needed?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkoutDayExercise {
+  id: string;
+  day_id: string;
+  exercise_id: string;
+  sort_order: number;
+  custom_duration_seconds?: number;
+  custom_reps?: number;
+  custom_sets?: number;
+  custom_weight_kg?: number;
+  rest_seconds: number;
+  created_at: string;
+  // Joined fields
+  exercise?: Exercise;
+}
+
+export interface UserWorkoutProgress {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  day_id: string;
+  exercise_id: string;
+  completed_at: string;
+  actual_duration_seconds?: number;
+  actual_reps?: number;
+  actual_sets?: number;
+  actual_weight_kg?: number;
+  notes?: string;
+}
+
+// Extended types for UI
+export interface WorkoutPlanWithDays extends WorkoutPlan {
+  days: WorkoutDayWithExercises[];
+}
+
+export interface WorkoutDayWithExercises extends WorkoutDay {
+  exercises: WorkoutDayExercise[];
+}
+
+export interface ExerciseWithCustomization extends Exercise {
+  custom_duration_seconds?: number;
+  custom_reps?: number;
+  custom_sets?: number;
+  custom_weight_kg?: number;
+  rest_seconds: number;
+  sort_order: number;
+}
+
+// Update View type to include guided workouts
+export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity' | 'guided_workouts' | 'workout_player';

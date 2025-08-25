@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, MealEntry, Workout } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = __SUPABASE_URL__;
+const supabaseAnonKey = __SUPABASE_ANON_KEY__;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');

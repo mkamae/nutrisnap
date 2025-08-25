@@ -1,10 +1,10 @@
 import React from 'react';
-import { MealEntry, UserProfile } from '../types';
+import { MealEntry, UserProfile, View } from '../types';
 
 interface DashboardViewProps {
   entries: MealEntry[];
   profile: UserProfile | null;
-  setCurrentView: (view: string) => void;
+  setCurrentView: (view: View) => void;
   workoutCalories?: number;
   netCalories?: number;
   caloriesLeft?: number;

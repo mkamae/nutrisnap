@@ -9,6 +9,8 @@ import ProfileView from './components/ProfileView';
 import OnboardingView from './components/OnboardingView';
 import WorkoutView from './components/WorkoutView';
 import BottomNav from './components/BottomNav';
+import GuidedWorkoutsView from './components/GuidedWorkoutsView';
+import WorkoutPlayer from './components/WorkoutPlayer';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -327,8 +329,10 @@ function App() {
   if (isLoggingWorkout) {
     return (
       <WorkoutView
-        onLogWorkout={logWorkout}
-        onCancel={() => setIsLoggingWorkout(false)}
+        profile={userProfile}
+        workouts={workouts}
+        onWorkoutUpdate={setWorkouts}
+        setCurrentView={setCurrentView}
       />
     );
   }
@@ -339,16 +343,17 @@ function App() {
       return <DashboardView entries={[]} profile={null} setCurrentView={setCurrentView} />;
     }
 
+    // Create a wrapper function to match the expected signature
+    const handleViewChange = (view: View) => {
+      setCurrentView(view);
+    };
+
     switch (currentView) {
-      case 'dashboard':
+      case 'onboarding':
         return (
-          <DashboardView
-            entries={todaysEntries.entries}
-            profile={userProfile}
-            setCurrentView={setCurrentView}
-            workoutCalories={todaysWorkoutCalories}
-            netCalories={netCalories}
-            caloriesLeft={caloriesLeft}
+          <OnboardingView
+            onComplete={handleOnboardingComplete}
+            onSkip={handleOnboardingSkip}
           />
         );
       case 'add_meal':
@@ -372,7 +377,21 @@ function App() {
             profile={userProfile}
             workouts={workouts}
             onWorkoutUpdate={setWorkouts}
-            setCurrentView={setCurrentView}
+            setCurrentView={handleViewChange}
+          />
+        );
+      case 'guided_workouts':
+        return (
+          <GuidedWorkoutsView
+            setCurrentView={handleViewChange}
+            currentUserId={currentUserId}
+          />
+        );
+      case 'workout_player':
+        return (
+          <WorkoutPlayer
+            setCurrentView={handleViewChange}
+            currentUserId={currentUserId}
           />
         );
       case 'activity':
@@ -387,7 +406,7 @@ function App() {
           <DashboardView
             entries={todaysEntries.entries}
             profile={userProfile}
-            setCurrentView={setCurrentView}
+            setCurrentView={handleViewChange}
             workoutCalories={todaysWorkoutCalories}
             netCalories={netCalories}
             caloriesLeft={caloriesLeft}
