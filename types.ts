@@ -70,15 +70,13 @@ export interface WorkoutExercise {
   updated_at: string;
 }
 
-export interface WorkoutSession {
+export interface Workout {
   id: string;
-  userId: string;
-  routineId?: string;
-  sessionDate: string; // ISO date string
-  startTime?: string; // ISO timestamp
-  endTime?: string; // ISO timestamp
-  totalDurationMinutes: number;
-  caloriesBurned: number;
+  user_id: string;
+  workout_type: string;
+  duration_minutes: number;
+  calories_burned?: number;
+  workout_date: string; // ISO date string
   notes?: string;
   created_at: string;
 }
@@ -117,4 +115,4 @@ export interface AuthUser {
   created_at: string;
 }
 
-export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity' | 'fitness' | 'enhanced_workouts' | 'enhanced_activity';
+export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity';

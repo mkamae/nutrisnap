@@ -12,6 +12,7 @@ A React-based nutrition tracking application that uses AI-powered image analysis
 - 🗄️ **Supabase Database**: Secure, scalable backend with real-time data synchronization
 - 👤 **User Authentication**: Secure user management with Supabase Auth
 - 📊 **Nutrition Tracking**: Comprehensive meal logging with calories, macros, and portion sizes
+- 💪 **Workout Tracking**: Local workout logging with duration, calories burned, and notes
 - 📱 **Responsive Design**: Modern, mobile-friendly interface
 - 🔒 **Security**: Row Level Security (RLS) policies for data protection
 
@@ -35,12 +36,11 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 # Gemini AI Configuration
 VITE_GEMINI_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
 
-# Google Fitness API Configuration
-VITE_GOOGLE_CLIENT_ID=854458799280-ag7ojs30mgtc0m0bser0tqm6nn3o8d7a.apps.googleusercontent.com
-VITE_GOOGLE_FIT_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
+# Workout Tracking
+# Local workout tracking system integrated with Supabase
 ```
 
-**Note**: The Google API Key is the same as the Gemini API Key for this project configuration.
+**Note**: Workout tracking is now handled locally through Supabase instead of external APIs.
 
 ## Quick Start
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { UserProfile, MealEntry, View, WorkoutRoutine, WorkoutSession } from './types';
+import { UserProfile, MealEntry, View, Workout } from './types';
 import { authService, profileService, mealService, workoutService } from './services/supabaseService';
 import { supabase } from './services/supabaseService';
 import AuthView from './components/AuthView';
@@ -7,10 +7,7 @@ import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import OnboardingView from './components/OnboardingView';
-import WorkoutLogView from './components/WorkoutLogView';
-import FitnessDashboard from './components/FitnessDashboard';
-import EnhancedWorkoutView from './components/EnhancedWorkoutView';
-import EnhancedActivityView from './components/EnhancedActivityView';
+import WorkoutView from './components/WorkoutView';
 import BottomNav from './components/BottomNav';
 
 function App() {
@@ -19,7 +16,7 @@ function App() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
-  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
@@ -65,7 +62,7 @@ function App() {
           setIsAuthenticated(false);
           setUserProfile(null);
           setMealEntries([]);
-          setWorkoutSessions([]);
+          setWorkouts([]);
           setHasCompletedOnboarding(false);
         }
       }
@@ -102,10 +99,10 @@ function App() {
       setMealEntries(meals);
       console.log('Meals loaded:', meals.length);
 
-      // Load workout sessions
-      const sessions = await workoutService.getWorkoutSessions(userId);
-      setWorkoutSessions(sessions);
-      console.log('Workout sessions loaded:', sessions.length);
+      // Load workouts
+      const workouts = await workoutService.getWorkouts(userId);
+      setWorkouts(workouts);
+      console.log('Workouts loaded:', workouts.length);
 
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -145,7 +142,7 @@ function App() {
     }
   };
 
-  const handleOnboardingComplete = async (profile: UserProfile, workoutRoutine?: WorkoutRoutine) => {
+  const handleOnboardingComplete = async (profile: UserProfile) => {
     if (!currentUserId) return;
 
     try {
@@ -156,12 +153,7 @@ function App() {
       const savedProfile = await profileService.upsertProfile(profileWithUserId, currentUserId);
       setUserProfile(savedProfile);
       
-      // Save workout routine if provided
-      if (workoutRoutine) {
-        const routineWithUserId = { ...workoutRoutine, user_id: currentUserId };
-        const savedRoutine = await workoutService.createWorkoutRoutine(routineWithUserId, currentUserId);
-        console.log('Workout routine saved:', savedRoutine);
-      }
+      // Note: Workout routine creation removed - using simple workout tracking instead
 
       // Mark onboarding as completed and persist to localStorage
       setHasCompletedOnboarding(true);
@@ -229,19 +221,19 @@ function App() {
     }
   };
 
-  const logWorkoutSession = async (session: Omit<WorkoutSession, 'id' | 'created_at'>) => {
+  const logWorkout = async (workout: Omit<Workout, 'id' | 'created_at'>) => {
     if (!currentUserId) {
       throw new Error('No authenticated user found');
     }
 
     try {
-      const sessionWithUserId = { ...session, userId: currentUserId };
-      const savedSession = await workoutService.logWorkoutSession(sessionWithUserId, currentUserId);
-      setWorkoutSessions(prev => [savedSession, ...prev]);
+      const workoutWithUserId = { ...workout, user_id: currentUserId };
+      const savedWorkout = await workoutService.createWorkout(workoutWithUserId, currentUserId);
+      setWorkouts(prev => [savedWorkout, ...prev]);
       setIsLoggingWorkout(false);
       setCurrentView('workouts');
     } catch (error) {
-      console.error('Error logging workout session:', error);
+      console.error('Error logging workout:', error);
       throw error;
     }
   };
@@ -280,10 +272,10 @@ function App() {
   // Calculate workout calories burned today
   const todaysWorkoutCalories = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return workoutSessions
-      .filter(session => session.sessionDate === today)
-      .reduce((total, session) => total + (session.caloriesBurned || 0), 0);
-  }, [workoutSessions]);
+    return workouts
+      .filter(workout => workout.workout_date === today)
+      .reduce((total, workout) => total + (workout.calories_burned || 0), 0);
+  }, [workouts]);
 
   // Calculate net calories (consumed - burned)
   const netCalories = todaysEntries.totals.calories - todaysWorkoutCalories;
@@ -298,7 +290,7 @@ function App() {
     currentView,
     userProfile: userProfile?.name,
     mealEntriesCount: mealEntries.length,
-    workoutSessionsCount: workoutSessions.length
+    workoutsCount: workouts.length
   });
 
   if (isLoading) {
@@ -334,8 +326,8 @@ function App() {
   // Show workout logging view
   if (isLoggingWorkout) {
     return (
-      <WorkoutLogView
-        onLogWorkout={logWorkoutSession}
+      <WorkoutView
+        onLogWorkout={logWorkout}
         onCancel={() => setIsLoggingWorkout(false)}
       />
     );
@@ -374,33 +366,21 @@ function App() {
             onProfileUpdate={handleProfileUpdate}
           />
         );
-      case 'fitness':
+      case 'workouts':
         return (
-          <FitnessDashboard
+          <WorkoutView
             profile={userProfile}
-            workoutSessions={workoutSessions}
-            onSyncWorkouts={(workouts) => {
-              const updatedSessions = [...workoutSessions, ...workouts];
-              setWorkoutSessions(updatedSessions);
-            }}
-          />
-        );
-      case 'enhanced_workouts':
-        return (
-          <EnhancedWorkoutView
-            profile={userProfile}
-            workoutSessions={workoutSessions}
-            onWorkoutUpdate={setWorkoutSessions}
+            workouts={workouts}
+            onWorkoutUpdate={setWorkouts}
             setCurrentView={setCurrentView}
           />
         );
-      case 'enhanced_activity':
+      case 'activity':
         return (
-          <EnhancedActivityView
-            profile={userProfile}
-            workoutSessions={workoutSessions}
-            mealEntries={mealEntries}
-          />
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Activity Summary</h2>
+            <p className="text-gray-600 dark:text-gray-400">Activity tracking coming soon...</p>
+          </div>
         );
       default:
         return (
