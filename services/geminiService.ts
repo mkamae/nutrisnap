@@ -1,27 +1,12 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genAI";
 import { Nutrients } from '../types';
 
-// Debug: Log environment variables to see what's being loaded
-console.log('=== GEMINI SERVICE DEBUG ===');
-console.log('VITE_GEMINI_API_KEY:', import.meta.env.VITE_GEMINI_API_KEY);
-console.log('All import.meta.env:', import.meta.env);
-console.log('==========================');
-
-// Try multiple ways to get the API key
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 
-                import.meta.env.GEMINI_API_KEY || 
-                process.env.VITE_GEMINI_API_KEY ||
-                process.env.GEMINI_API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
-  console.error('❌ GEMINI_API_KEY is missing!');
-  console.error('Available environment variables:', import.meta.env);
-  console.error('Available process.env:', process.env);
   throw new Error("GEMINI_API_KEY environment variable not set.");
 }
-
-console.log('✅ GEMINI_API_KEY loaded successfully:', API_KEY ? '***HIDDEN***' : 'undefined');
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 

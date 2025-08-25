@@ -1,47 +1,48 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { View, MealEntry, UserProfile, Nutrients } from './types';
-import BottomNav from './components/BottomNav';
-import { analyzeImageWithGemini } from './services/geminiService';
-import { fileToBase64 } from './utils/helpers';
-import Loader from './components/Loader';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserProfile, MealEntry, View, WorkoutRoutine, WorkoutSession } from './types';
+import { authService, profileService, mealService, workoutService } from './services/supabaseService';
+import { supabase } from './services/supabaseService';
 import AuthView from './components/AuthView';
-import CameraIcon from './components/icons/CameraIcon';
-import { mealService, profileService, authService } from './services/supabaseService';
+import DashboardView from './components/DashboardView';
+import AddMealView from './components/AddMealView';
+import ProfileView from './components/ProfileView';
+import OnboardingView from './components/OnboardingView';
+import WorkoutLogView from './components/WorkoutLogView';
+import FitnessDashboard from './components/FitnessDashboard';
+import EnhancedWorkoutView from './components/EnhancedWorkoutView';
+import EnhancedActivityView from './components/EnhancedActivityView';
+import BottomNav from './components/BottomNav';
 
-const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Alex',
-    age: 30,
-    weightKg: 75,
-    heightCm: 180,
-    activityLevel: 'moderate',
-    dailyCalorieGoal: 2500,
-  });
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
 
-  // Load user data on app start
+  // Initialize app
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Check if user is authenticated
+        console.log('🔍 Initializing app...');
         const user = await authService.getCurrentUser();
+        console.log('👤 Current user:', user ? user.id : 'No user');
+        
         if (user) {
+          setCurrentUserId(user.id);
           setIsAuthenticated(true);
           await loadUserData(user.id);
+        } else {
+          console.log('🚫 No authenticated user found, showing auth view');
         }
-      } catch (err) {
-        console.error('Error initializing app:', err);
-        // Don't set error for auth session missing - this is expected for new users
-        if (err instanceof Error && !err.message.includes('Auth session missing')) {
-          setError('Failed to initialize app');
-        }
+      } catch (error) {
+        console.error('❌ Error initializing app:', error);
       } finally {
+        console.log('✅ App initialization complete, setting loading to false');
         setIsLoading(false);
       }
     };
@@ -49,622 +50,380 @@ const App: React.FC = () => {
     initializeApp();
   }, []);
 
+  // Auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setCurrentUserId(session.user.id);
+          setIsAuthenticated(true);
+          await loadUserData(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUserId(null);
+          setIsAuthenticated(false);
+          setUserProfile(null);
+          setMealEntries([]);
+          setWorkoutSessions([]);
+          setHasCompletedOnboarding(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const loadUserData = async (userId: string) => {
     try {
-      // Load user profile
+      console.log('Loading user data for:', userId);
+      
+      // Check localStorage for onboarding completion status
+      const onboardingCompleted = localStorage.getItem(`onboarding_completed_${userId}`);
+      
+      // Load profile
       const profile = await profileService.getProfile(userId);
       if (profile) {
         setUserProfile(profile);
+        setHasCompletedOnboarding(true);
+        console.log('Profile loaded from database:', profile);
+      } else if (onboardingCompleted === 'true') {
+        // User has completed onboarding before but profile might be missing
+        // This could happen if the database was cleared or there was an error
+        console.log('Onboarding completed before but no profile found, setting as completed');
+        setHasCompletedOnboarding(true);
+      } else {
+        console.log('No profile found and no onboarding record, user needs onboarding');
+        setHasCompletedOnboarding(false);
       }
 
-      // Load meal entries
+      // Load meals
       const meals = await mealService.getMeals(userId);
       setMealEntries(meals);
-    } catch (err) {
-      console.error('Error loading user data:', err);
-      setError('Failed to load user data');
+      console.log('Meals loaded:', meals.length);
+
+      // Load workout sessions
+      const sessions = await workoutService.getWorkoutSessions(userId);
+      setWorkoutSessions(sessions);
+      console.log('Workout sessions loaded:', sessions.length);
+
+    } catch (error) {
+      console.error('Error loading user data:', error);
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (email: string, password: string, isSignUp: boolean) => {
     try {
-      setIsLoading(true);
-      // For demo purposes, we'll use a mock user ID
-      // In a real app, this would come from Supabase Auth
-      const mockUserId = 'demo-user-123';
-      await loadUserData(mockUserId);
-      setIsAuthenticated(true);
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Login failed');
-    } finally {
-      setIsLoading(false);
+      let result;
+      if (isSignUp) {
+        result = await authService.signUp(email, password);
+      } else {
+        result = await authService.signIn(email, password);
+      }
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      if (result.user) {
+        setCurrentUserId(result.user.id);
+        setIsAuthenticated(true);
+        await loadUserData(result.user.id);
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      throw error;
     }
   };
 
   const handleLogout = async () => {
     try {
       await authService.signOut();
-      setIsAuthenticated(false);
-      setCurrentView('dashboard');
-      setMealEntries([]);
-      setUserProfile({
-        name: 'Alex',
-        age: 30,
-        weightKg: 75,
-        heightCm: 180,
-        activityLevel: 'moderate',
-        dailyCalorieGoal: 2500,
-      });
-    } catch (err) {
-      console.error('Logout error:', err);
+      // Auth state change listener will handle clearing the state
+    } catch (error) {
+      console.error('Error during logout:', error);
     }
   };
 
-  const addMealEntry = async (nutrients: Nutrients, imageUrl: string) => {
+  const handleOnboardingComplete = async (profile: UserProfile, workoutRoutine?: WorkoutRoutine) => {
+    if (!currentUserId) return;
+
     try {
-      setIsLoading(true);
-      const newEntry: MealEntry = {
-        ...nutrients,
-        id: new Date().toISOString() + Math.random(),
-        date: new Date().toISOString(),
-        imageUrl,
-        user_id: 'demo-user-123', // In real app, get from auth context
+      // Ensure profile has the correct user_id
+      const profileWithUserId = { ...profile, user_id: currentUserId };
+      
+      // Save profile to database
+      const savedProfile = await profileService.upsertProfile(profileWithUserId, currentUserId);
+      setUserProfile(savedProfile);
+      
+      // Save workout routine if provided
+      if (workoutRoutine) {
+        const routineWithUserId = { ...workoutRoutine, user_id: currentUserId };
+        const savedRoutine = await workoutService.createWorkoutRoutine(routineWithUserId, currentUserId);
+        console.log('Workout routine saved:', savedRoutine);
+      }
+
+      // Mark onboarding as completed and persist to localStorage
+      setHasCompletedOnboarding(true);
+      localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
+      
+      setCurrentView('dashboard');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      throw error;
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    setHasCompletedOnboarding(true);
+    // Also persist the skip to localStorage
+    if (currentUserId) {
+      localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
+    }
+    setCurrentView('dashboard');
+  };
+
+  const addMealEntry = async (meal: Omit<MealEntry, 'id' | 'created_at'>) => {
+    if (!currentUserId) {
+      throw new Error('No authenticated user found');
+    }
+
+    try {
+      const savedMeal = await mealService.addMeal(meal, currentUserId);
+      
+      // Map the saved meal to the correct format
+      const mappedMeal: MealEntry = {
+        id: savedMeal.id,
+        mealName: savedMeal.mealName,
+        portionSize: savedMeal.portionSize,
+        imageUrl: savedMeal.imageUrl,
+        calories: savedMeal.calories,
+        protein: savedMeal.protein,
+        carbs: savedMeal.carbs,
+        fat: savedMeal.fat,
+        date: savedMeal.date,
+        user_id: savedMeal.user_id,
+        created_at: savedMeal.created_at
       };
 
-      // Save to Supabase database
-      const savedMeal = await mealService.createMeal(newEntry);
-      
-      if (savedMeal) {
-        // Update local state with the saved meal
-        setMealEntries(prev => [savedMeal, ...prev]);
-        
-        // Show success message and redirect to dashboard
-        setSuccessMessage(`Successfully added ${nutrients.mealName}!`);
-        setCurrentView('dashboard');
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000);
-      }
-    } catch (err) {
-      console.error('Error saving meal:', err);
-      setError('Failed to save meal. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setMealEntries(prev => [mappedMeal, ...prev]);
+      setCurrentView('dashboard');
+    } catch (error) {
+      console.error('Error saving meal:', error);
+      throw error;
     }
   };
 
+  const handleProfileUpdate = async (updatedProfile: UserProfile) => {
+    if (!currentUserId) return;
+
+    try {
+      console.log('Updating profile:', updatedProfile);
+      const savedProfile = await profileService.upsertProfile(updatedProfile, currentUserId);
+      console.log('Profile saved to DB:', savedProfile);
+      setUserProfile(savedProfile);
+      console.log('User profile state updated:', savedProfile);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
+
+  const logWorkoutSession = async (session: Omit<WorkoutSession, 'id' | 'created_at'>) => {
+    if (!currentUserId) {
+      throw new Error('No authenticated user found');
+    }
+
+    try {
+      const sessionWithUserId = { ...session, userId: currentUserId };
+      const savedSession = await workoutService.logWorkoutSession(sessionWithUserId, currentUserId);
+      setWorkoutSessions(prev => [savedSession, ...prev]);
+      setIsLoggingWorkout(false);
+      setCurrentView('workouts');
+    } catch (error) {
+      console.error('Error logging workout session:', error);
+      throw error;
+    }
+  };
+
+  // Calculate today's entries and totals
   const todaysEntries = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return mealEntries.filter(entry => entry.date.startsWith(today));
+    console.log('Today\'s date:', today);
+    console.log('All meal entries:', mealEntries);
+    
+    const entries = mealEntries.filter(entry => {
+      const entryDate = entry.date;
+      console.log('Entry date:', entryDate, 'Type:', typeof entryDate);
+      
+      // Handle both date strings and Date objects
+      if (typeof entryDate === 'string') {
+        return entryDate.includes(today) || entryDate.split('T')[0] === today;
+      }
+      return false;
+    });
+    
+    console.log('Filtered today\'s entries:', entries);
+    
+    const totals = entries.reduce((acc, entry) => ({
+      calories: acc.calories + (entry.calories || 0),
+      protein: acc.protein + (entry.protein || 0),
+      carbs: acc.carbs + (entry.carbs || 0),
+      fat: acc.fat + (entry.fat || 0)
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    
+    console.log('Today\'s totals:', totals);
+    
+    return { entries, totals };
   }, [mealEntries]);
 
-  const renderView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <DashboardView entries={todaysEntries} profile={userProfile} />;
-      case 'add_meal':
-        return <AddMealView onAddMeal={addMealEntry} />;
-      case 'progress':
-        return <ProgressView entries={mealEntries} calorieGoal={userProfile.dailyCalorieGoal} />;
-      case 'profile':
-        return <ProfileView profile={userProfile} onLogout={handleLogout} />;
-      default:
-        return <DashboardView entries={todaysEntries} profile={userProfile} />;
-    }
-  };
+  // Calculate workout calories burned today
+  const todaysWorkoutCalories = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return workoutSessions
+      .filter(session => session.sessionDate === today)
+      .reduce((total, session) => total + (session.caloriesBurned || 0), 0);
+  }, [workoutSessions]);
+
+  // Calculate net calories (consumed - burned)
+  const netCalories = todaysEntries.totals.calories - todaysWorkoutCalories;
+  const caloriesLeft = (userProfile?.dailyCalorieGoal || 2500) - netCalories;
+
+  // Debug logging
+  console.log('🔍 APP STATE DEBUG:', {
+    isLoading,
+    isAuthenticated,
+    currentUserId,
+    hasCompletedOnboarding,
+    currentView,
+    userProfile: userProfile?.name,
+    mealEntriesCount: mealEntries.length,
+    workoutSessionsCount: workoutSessions.length
+  });
 
   if (isLoading) {
-    return <Loader />;
-  }
-
-  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-          >
-            Retry
-          </button>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading NutriSnap...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <AuthView onLogin={handleLogin} />;
-  }
-
-  return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans text-gray-800 dark:text-gray-200">
-      <div className="max-w-lg mx-auto pb-20">
-        <Header view={currentView} />
-        
-        {/* Success Message */}
-        {successMessage && (
-          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
-            {successMessage}
-          </div>
-        )}
-        
-        <main className="p-4">
-          {renderView()}
-        </main>
-      </div>
-      <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
-    </div>
-  );
-};
-
-// --- VIEWS / PAGES ---
-
-const Header: React.FC<{ view: View }> = ({ view }) => {
-  const title = view.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-  return (
-    <header className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg z-10 border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-lg mx-auto px-4 py-3">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white text-center">{title}</h1>
-      </div>
-    </header>
-  )
-}
-
-const DashboardView: React.FC<{ entries: MealEntry[], profile: UserProfile }> = ({ entries, profile }) => {
-  const totals = useMemo(() => {
-    return entries.reduce((acc, entry) => ({
-      calories: acc.calories + entry.calories,
-      protein: acc.protein + entry.protein,
-      carbs: acc.carbs + entry.carbs,
-      fat: acc.fat + entry.fat,
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  }, [entries]);
-
-  const macroData = [
-    { name: 'Protein', value: totals.protein, color: '#34D399' },
-    { name: 'Carbs', value: totals.carbs, color: '#60A5FA' },
-    { name: 'Fat', value: totals.fat, color: '#FBBF24' },
-  ];
-
-  const caloriesLeft = profile.dailyCalorieGoal - totals.calories;
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <p className="text-gray-500 dark:text-gray-400">Calories Remaining</p>
-        <div className="flex justify-center items-baseline space-x-2 mt-2">
-            <span className="text-4xl font-extrabold text-green-500">{Math.max(0, caloriesLeft)}</span>
-            <span className="text-lg text-gray-600 dark:text-gray-300">/ {profile.dailyCalorieGoal} kcal</span>
-        </div>
-      </div>
-
-      {totals.calories > 0 && (
-        <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-          <h3 className="text-lg font-semibold mb-2 text-center">Today's Macros</h3>
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={macroData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
-                  {macroData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip formatter={(value) => `${value}g`} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Today's Meals</h3>
-        {entries.length > 0 ? (
-          <div className="space-y-3">
-            {entries.map(entry => (
-              <div key={entry.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-                <img src={entry.imageUrl} alt={entry.mealName} className="w-16 h-16 rounded-lg object-cover mr-4" />
-                <div className="flex-1">
-                  <p className="font-bold">{entry.mealName}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{entry.calories} kcal &bull; {entry.portionSize}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400 mb-4">No meals logged yet today.</p>
-            <button 
-              onClick={() => setCurrentView('add_meal')} 
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Add your first meal
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const AddMealView: React.FC<{ onAddMeal: (nutrients: Nutrients, imageUrl: string) => void }> = ({ onAddMeal }) => {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<Nutrients | null>(null);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  
-  useEffect(() => {
-    if (isCameraOpen && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-    }
-  }, [isCameraOpen]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('File input changed:', e.target.files);
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      console.log('Selected file:', file.name, file.type, file.size);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setImageFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setError(null);
-      setAnalysisResult(null);
-      setDebugInfo(`File selected: ${file.name} (${file.type})`);
-    }
-  };
-  
-  const handleClearSelection = () => {
-    setImageFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
-    setError(null);
-    setAnalysisResult(null);
-    setDebugInfo('');
-  };
-  
-  const handleStartCamera = async () => {
-    console.log('Starting camera...');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        streamRef.current = stream;
-        setIsCameraOpen(true);
-        setDebugInfo('Camera started successfully');
-      } catch (err) {
-        console.error("Error accessing camera:", err);
-        setError("Could not access camera. Please check permissions.");
-        setDebugInfo(`Camera error: ${err}`);
-      }
-    } else {
-      setError("Camera is not supported on this device.");
-      setDebugInfo('Camera not supported');
-    }
-  };
-
-  const handleStopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-    setIsCameraOpen(false);
-    setDebugInfo('Camera stopped');
-  };
-
-  const handleTakePicture = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `nutrisnap-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            if (previewUrl) {
-              URL.revokeObjectURL(previewUrl);
-            }
-            setImageFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            setAnalysisResult(null);
-            setError(null);
-            setDebugInfo(`Photo taken: ${file.name} (${file.size} bytes)`);
-            handleStopCamera();
-          }
-        }, 'image/jpeg', 0.8);
-      }
-    }
-  };
-
-  const handleAnalyze = async () => {
-    if (!imageFile) {
-      setError("Please select an image first.");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setAnalysisResult(null);
-    setDebugInfo('Starting analysis...');
-    
-    try {
-      console.log('Converting file to base64...');
-      const base64Image = await fileToBase64(imageFile);
-      console.log('Base64 length:', base64Image.length);
-      setDebugInfo('Image converted, calling Gemini...');
-      
-      const result = await analyzeImageWithGemini(base64Image, imageFile.type);
-      console.log('Analysis result:', result);
-      setAnalysisResult(result);
-      setDebugInfo('Analysis completed successfully');
-    } catch (err: any) {
-      console.error('Analysis error:', err);
-      setError(err.message || "An unknown error occurred.");
-      setDebugInfo(`Analysis failed: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (analysisResult && previewUrl) {
-      onAddMeal(analysisResult, previewUrl);
-    }
-  };
-  
-  if (isCameraOpen) {
+  // Show onboarding for new users
+  if (isAuthenticated && !hasCompletedOnboarding) {
     return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
-        <canvas ref={canvasRef} className="hidden"></canvas>
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50 flex justify-center items-center">
-          <button 
-            onClick={handleTakePicture} 
-            aria-label="Take picture"
-            className="w-16 h-16 bg-white rounded-full border-4 border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-white"
-          ></button>
-          <button onClick={handleStopCamera} className="absolute right-6 text-white font-semibold text-lg">Cancel</button>
-        </div>
+      <OnboardingView
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
+    );
+  }
+
+  // Show auth view for unauthenticated users
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <AuthView onLogin={handleLogin} />
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col items-center space-y-4">
-      <div className="w-full max-w-sm p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        
-        {previewUrl ? (
-           <div className="w-full">
-             <img src={previewUrl} alt="Meal preview" className="w-full h-48 object-cover rounded-lg mb-2" />
-             <button onClick={handleClearSelection} className="w-full text-center text-sm text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors">
-              Choose a different image
-            </button>
-           </div>
-        ) : (
-          <div>
-            <h3 className="text-lg font-semibold text-center mb-4 text-gray-700 dark:text-gray-300">Add a Meal Photo</h3>
-            <div className="space-y-3">
-              <label htmlFor="meal-upload" className="w-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                 <span className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">Upload from Library</span>
-              </label>
-              <input id="meal-upload" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-              <button onClick={handleStartCamera} className="w-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <CameraIcon className="h-12 w-12 text-gray-500 dark:text-gray-400"/>
-                <span className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">Use Camera</span>
-              </button>
-            </div>
-          </div>
-        )}
+  // Show workout logging view
+  if (isLoggingWorkout) {
+    return (
+      <WorkoutLogView
+        onLogWorkout={logWorkoutSession}
+        onCancel={() => setIsLoggingWorkout(false)}
+      />
+    );
+  }
 
-        {error && <p className="text-red-500 text-sm mt-2 text-center">{error}</p>}
-        
-        {debugInfo && (
-          <p className="text-xs text-gray-500 text-center mt-2 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-            {debugInfo}
-          </p>
-        )}
-        
-        {previewUrl && !analysisResult && (
-          <button
-            onClick={handleAnalyze}
-            disabled={!imageFile || isLoading}
-            className="w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? 'Analyzing...' : 'Analyze Meal'}
-          </button>
-        )}
-      </div>
+  // Render main app for authenticated users
+  const renderView = () => {
+    if (!isAuthenticated || !currentUserId) {
+      return <DashboardView entries={[]} profile={null} setCurrentView={setCurrentView} />;
+    }
 
-      {isLoading && <Loader />}
-
-      {analysisResult && (
-        <div className="w-full max-w-sm p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md animate-fade-in">
-          <h3 className="text-xl font-bold text-center mb-3">{analysisResult.mealName}</h3>
-          <p className="text-center text-gray-500 dark:text-gray-400 mb-4">{analysisResult.portionSize}</p>
-          <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-300">Calories</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{analysisResult.calories}</p>
-              </div>
-              <div className="text-center p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">Carbs</p>
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{analysisResult.carbs}g</p>
-              </div>
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                  <p className="text-sm text-emerald-800 dark:text-emerald-300">Protein</p>
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{analysisResult.protein}g</p>
-              </div>
-              <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-                  <p className="text-sm text-amber-800 dark:amber-300">Fat</p>
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{analysisResult.fat}g</p>
-              </div>
-          </div>
-          <button
-            onClick={handleConfirm}
-            className="w-full mt-4 bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Confirm & Add Meal
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ProgressView: React.FC<{ entries: MealEntry[], calorieGoal: number }> = ({ entries, calorieGoal }) => {
-   const data = useMemo(() => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toISOString().split('T')[0];
-    }).reverse();
-
-    return last7Days.map(dateStr => {
-      const dayEntries = entries.filter(e => e.date.startsWith(dateStr));
-      const totalCalories = dayEntries.reduce((sum, e) => sum + e.calories, 0);
-      return {
-        name: new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' }),
-        Intake: totalCalories,
-        Goal: calorieGoal,
-      };
-    });
-  }, [entries, calorieGoal]);
-
-  // Group meals by date for meal history
-  const mealHistory = useMemo(() => {
-    const grouped = entries.reduce((acc, meal) => {
-      const date = meal.date.split('T')[0];
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(meal);
-      return acc;
-    }, {} as Record<string, MealEntry[]>);
-
-    return Object.entries(grouped)
-      .sort(([a], [b]) => b.localeCompare(a)) // Sort by date descending
-      .slice(0, 10); // Show last 10 days
-  }, [entries]);
+    switch (currentView) {
+      case 'dashboard':
+        return (
+          <DashboardView
+            entries={todaysEntries.entries}
+            profile={userProfile}
+            setCurrentView={setCurrentView}
+            workoutCalories={todaysWorkoutCalories}
+            netCalories={netCalories}
+            caloriesLeft={caloriesLeft}
+          />
+        );
+      case 'add_meal':
+        return (
+          <AddMealView
+            onConfirm={addMealEntry}
+            onCancel={() => setCurrentView('dashboard')}
+          />
+        );
+      case 'profile':
+        return (
+          <ProfileView
+            profile={userProfile!}
+            onLogout={handleLogout}
+            onProfileUpdate={handleProfileUpdate}
+          />
+        );
+      case 'fitness':
+        return (
+          <FitnessDashboard
+            profile={userProfile}
+            workoutSessions={workoutSessions}
+            onSyncWorkouts={(workouts) => {
+              const updatedSessions = [...workoutSessions, ...workouts];
+              setWorkoutSessions(updatedSessions);
+            }}
+          />
+        );
+      case 'enhanced_workouts':
+        return (
+          <EnhancedWorkoutView
+            profile={userProfile}
+            workoutSessions={workoutSessions}
+            onWorkoutUpdate={setWorkoutSessions}
+            setCurrentView={setCurrentView}
+          />
+        );
+      case 'enhanced_activity':
+        return (
+          <EnhancedActivityView
+            profile={userProfile}
+            workoutSessions={workoutSessions}
+            mealEntries={mealEntries}
+          />
+        );
+      default:
+        return (
+          <DashboardView
+            entries={todaysEntries.entries}
+            profile={userProfile}
+            setCurrentView={setCurrentView}
+            workoutCalories={todaysWorkoutCalories}
+            netCalories={netCalories}
+            caloriesLeft={caloriesLeft}
+          />
+        );
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Weekly Chart */}
-      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold mb-4 text-center">Weekly Calorie Intake</h3>
-        {entries.length > 0 ? (
-          <div style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer>
-              <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="Intake" fill="#34D399" />
-                <Bar dataKey="Goal" fill="#60A5FA" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">Log some meals to see your progress!</p>
-        )}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="pb-20">
+        {renderView()}
       </div>
-
-      {/* Meal History */}
-      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Recent Meal History</h3>
-        {mealHistory.length > 0 ? (
-          <div className="space-y-3">
-            {mealHistory.map(([date, meals]) => (
-              <div key={date} className="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-semibold text-gray-800 dark:text-gray-200">
-                    {new Date(date).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                  </h4>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {meals.reduce((sum, meal) => sum + meal.calories, 0)} kcal
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {meals.map(meal => (
-                    <div key={meal.id} className="flex items-center space-x-3 text-sm">
-                      <img 
-                        src={meal.imageUrl} 
-                        alt={meal.mealName} 
-                        className="w-8 h-8 rounded object-cover"
-                      />
-                      <span className="flex-1">{meal.mealName}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{meal.calories} kcal</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-8">No meals logged yet. Start tracking your nutrition!</p>
-        )}
-      </div>
+      <BottomNav currentView={currentView} onViewChange={setCurrentView} />
     </div>
   );
-};
-
-const ProfileView: React.FC<{ profile: UserProfile, onLogout: () => void }> = ({ profile, onLogout }) => {
-  return (
-    <div className="space-y-4">
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md flex items-center space-x-4">
-        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-          {profile.name.charAt(0)}
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold">{profile.name}</h2>
-          <p className="text-gray-500 dark:text-gray-400">Your personal profile</p>
-        </div>
-      </div>
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Details</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-sm text-gray-500 dark:text-gray-400">Age</p><p>{profile.age} years</p></div>
-          <div><p className="text-sm text-gray-500 dark:text-gray-400">Weight</p><p>{profile.weightKg} kg</p></div>
-          <div><p className="text-sm text-gray-500 dark:text-gray-400">Height</p><p>{profile.heightCm} cm</p></div>
-          <div><p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p><p className="capitalize">{profile.activityLevel.replace('_', ' ')}</p></div>
-        </div>
-      </div>
-       <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold mb-2">Daily Goal</h3>
-        <p className="text-3xl font-bold text-green-500">{profile.dailyCalorieGoal} <span className="text-lg">kcal</span></p>
-      </div>
-      <div className="pt-2">
-        <button
-            onClick={onLogout}
-            className="w-full text-center py-3 px-4 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors duration-200"
-        >
-            Sign Out
-        </button>
-      </div>
-    </div>
-  );
-};
+}
 
 export default App;

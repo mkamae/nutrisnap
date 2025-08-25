@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LogoIcon from './icons/LogoIcon';
 
 interface AuthViewProps {
-  onLogin: () => void;
+  onLogin: (email: string, password: string, isSignUp: boolean) => Promise<void>;
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
@@ -10,12 +10,21 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd call Supabase for auth here.
-    // For this mock, we'll log in if fields are filled.
     if (email && password) {
-      onLogin();
+      setIsLoading(true);
+      setError(null);
+      try {
+        await onLogin(email, password, view === 'signup');
+      } catch (err: any) {
+        setError(err.message || 'Authentication failed');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -68,12 +77,19 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               </div>
             </div>
 
+            {error && (
+              <div className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                {error}
+              </div>
+            )}
+            
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                disabled={isLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {view === 'login' ? 'Sign In' : 'Sign Up'}
+                {isLoading ? 'Loading...' : (view === 'login' ? 'Sign In' : 'Sign Up')}
               </button>
             </div>
           </form>

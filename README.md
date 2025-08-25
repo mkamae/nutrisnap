@@ -23,6 +23,25 @@ A React-based nutrition tracking application that uses AI-powered image analysis
 - **Styling**: CSS Modules
 - **Charts**: Recharts for data visualization
 
+## Environment Variables
+
+Create a `.env.local` file in your project root with the following variables:
+
+```env
+# Supabase Configuration
+VITE_SUPABASE_URL=https://adxtkbhtezlzuydrzmcx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0
+
+# Gemini AI Configuration
+VITE_GEMINI_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
+
+# Google Fitness API Configuration
+VITE_GOOGLE_CLIENT_ID=854458799280-ag7ojs30mgtc0m0bser0tqm6nn3o8d7a.apps.googleusercontent.com
+VITE_GOOGLE_FIT_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
+```
+
+**Note**: The Google API Key is the same as the Gemini API Key for this project configuration.
+
 ## Quick Start
 
 ### 1. Environment Setup

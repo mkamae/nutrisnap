@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="result"></div>
+
+    <script>
+        // Replace these with your actual values from .env
+        const SUPABASE_URL = 'https://adxtkbhtezlzuydrzmcx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0';
+
+        async function testConnection() {
+            try {
+                document.getElementById('status').textContent = 'Creating Supabase client...';
+                
+                const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                document.getElementById('status').textContent = 'Testing connection...';
+                
+                // Test basic connection
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                
+                if (error) {
+                    document.getElementById('result').innerHTML = `
+                        <h3>❌ Connection Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Code:</strong> ${error.code}</p>
+                        <p><strong>Details:</strong> ${error.details}</p>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <h3>✅ Connection Successful!</h3>
+                        <p>Supabase is reachable and responding.</p>
+                        <p><strong>Response:</strong> ${JSON.stringify(data)}</p>
+                    `;
+                }
+                
+                document.getElementById('status').textContent = 'Test completed';
+                
+            } catch (err) {
+                document.getElementById('result').innerHTML = `
+                    <h3>❌ Connection Error</h3>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <p><strong>Type:</strong> ${err.name}</p>
+                `;
+                document.getElementById('status').textContent = 'Test failed';
+            }
+        }
+
+        // Run test when page loads
+        testConnection();
+    </script>
+</body>
+</html>

@@ -6,36 +6,64 @@ import PlusCircleIcon from './icons/PlusCircleIcon';
 import ChartBarIcon from './icons/ChartBarIcon';
 import UserCircleIcon from './icons/UserCircleIcon';
 
-
 interface BottomNavProps {
   currentView: View;
-  setCurrentView: (view: View) => void;
+  onViewChange: (view: View) => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ currentView, setCurrentView }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ currentView, onViewChange }) => {
   const navItems = [
-    { view: 'dashboard' as View, label: 'Home', icon: HomeIcon },
-    { view: 'add_meal' as View, label: 'Add Meal', icon: PlusCircleIcon },
-    { view: 'progress' as View, label: 'Progress', icon: ChartBarIcon },
-    { view: 'profile' as View, label: 'Profile', icon: UserCircleIcon },
+    {
+      id: 'dashboard' as View,
+      label: 'Dashboard',
+      icon: HomeIcon,
+      color: 'text-blue-600'
+    },
+    {
+      id: 'add_meal' as View,
+      label: 'Add Meal',
+      icon: PlusCircleIcon,
+      color: 'text-green-600'
+    },
+    {
+      id: 'fitness' as View,
+      label: 'Fitness',
+      icon: ChartBarIcon,
+      color: 'text-purple-600'
+    },
+    {
+      id: 'enhanced_workouts' as View,
+      label: 'Workouts',
+      icon: ChartBarIcon,
+      color: 'text-red-600'
+    },
+    {
+      id: 'profile' as View,
+      label: 'Profile',
+      icon: UserCircleIcon,
+      color: 'text-gray-600'
+    }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg md:hidden">
-      <div className="flex justify-around items-center h-full max-w-lg mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+      <div className="flex justify-around items-center py-2">
         {navItems.map((item) => {
-          const isActive = currentView === item.view;
           const Icon = item.icon;
+          const isActive = currentView === item.id;
+          
           return (
             <button
-              key={item.view}
-              onClick={() => setCurrentView(item.view)}
-              className={`flex flex-col items-center justify-center w-full transition-colors duration-200 ${
-                isActive ? 'text-green-500' : 'text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400'
+              key={item.id}
+              onClick={() => onViewChange(item.id)}
+              className={`flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors ${
+                isActive 
+                  ? `${item.color} dark:text-white` 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
-              <Icon className={`h-6 w-6 ${item.view === 'add_meal' ? 'h-8 w-8 -mt-1' : ''}`} />
-              <span className={`text-xs mt-1 ${item.view === 'add_meal' ? 'hidden' : ''}`}>{item.label}</span>
+              <Icon className={`w-6 h-6 mb-1 ${isActive ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-xs font-medium">{item.label}</span>
             </button>
           );
         })}
