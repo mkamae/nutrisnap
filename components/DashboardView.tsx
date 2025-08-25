@@ -1,10 +1,10 @@
 import React from 'react';
-import { MealEntry, UserProfile, View } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { MealEntry, UserProfile } from '../types';
 
 interface DashboardViewProps {
   entries: MealEntry[];
   profile: UserProfile | null;
-  setCurrentView: (view: View) => void;
   workoutCalories?: number;
   netCalories?: number;
   caloriesLeft?: number;
@@ -13,11 +13,11 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   entries, 
   profile, 
-  setCurrentView,
   workoutCalories = 0,
   netCalories = 0,
   caloriesLeft = 0
 }) => {
+  const navigate = useNavigate();
   // Ensure profile has a dailyCalorieGoal, fallback to 2500 if missing
   const safeProfile = {
     ...profile,
@@ -135,7 +135,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               No meals logged yet today.
             </p>
             <button 
-              onClick={() => setCurrentView('add_meal')} 
+              onClick={() => navigate('/add-meal')} 
               className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Add your first meal
@@ -147,7 +147,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
         <button
-          onClick={() => setCurrentView('add_meal')}
+                      onClick={() => navigate('/add-meal')}
           className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-md transition-colors"
         >
           <div className="text-center">
@@ -157,7 +157,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
         
         <button
-          onClick={() => setCurrentView('workouts')}
+                      onClick={() => navigate('/workouts')}
           className="p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition-colors"
         >
           <div className="text-center">

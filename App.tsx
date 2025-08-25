@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { UserProfile, MealEntry, View, Workout } from './types';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProfile, MealEntry, Workout } from './types';
 import { authService, profileService, mealService, workoutService } from './services/supabaseService';
 import { supabase } from './services/supabaseService';
 import AuthView from './components/AuthView';
@@ -9,11 +10,9 @@ import ProfileView from './components/ProfileView';
 import OnboardingView from './components/OnboardingView';
 import WorkoutView from './components/WorkoutView';
 import BottomNav from './components/BottomNav';
-import GuidedWorkoutsView from './components/GuidedWorkoutsView';
-import WorkoutPlayer from './components/WorkoutPlayer';
+
 
 function App() {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -21,7 +20,6 @@ function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
 
   // Initialize app
   useEffect(() => {
@@ -47,6 +45,14 @@ function App() {
     };
 
     initializeApp();
+    
+    // Add a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('⚠️ App initialization timeout, forcing loading to false');
+      setIsLoading(false);
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(timeout);
   }, []);
 
   // Auth state change listener
@@ -75,39 +81,45 @@ function App() {
 
   const loadUserData = async (userId: string) => {
     try {
-      console.log('Loading user data for:', userId);
+      console.log('🔄 Starting to load user data for:', userId);
       
       // Check localStorage for onboarding completion status
       const onboardingCompleted = localStorage.getItem(`onboarding_completed_${userId}`);
+      console.log('📱 Onboarding completed from localStorage:', onboardingCompleted);
       
       // Load profile
+      console.log('👤 Loading profile...');
       const profile = await profileService.getProfile(userId);
       if (profile) {
         setUserProfile(profile);
         setHasCompletedOnboarding(true);
-        console.log('Profile loaded from database:', profile);
+        console.log('✅ Profile loaded from database:', profile);
       } else if (onboardingCompleted === 'true') {
         // User has completed onboarding before but profile might be missing
         // This could happen if the database was cleared or there was an error
-        console.log('Onboarding completed before but no profile found, setting as completed');
+        console.log('⚠️ Onboarding completed before but no profile found, setting as completed');
         setHasCompletedOnboarding(true);
       } else {
-        console.log('No profile found and no onboarding record, user needs onboarding');
+        console.log('❌ No profile found and no onboarding record, user needs onboarding');
         setHasCompletedOnboarding(false);
       }
 
       // Load meals
+      console.log('🍽️ Loading meals...');
       const meals = await mealService.getMeals(userId);
       setMealEntries(meals);
-      console.log('Meals loaded:', meals.length);
+      console.log('✅ Meals loaded:', meals.length);
 
       // Load workouts
+      console.log('💪 Loading workouts...');
       const workouts = await workoutService.getWorkouts(userId);
       setWorkouts(workouts);
-      console.log('Workouts loaded:', workouts.length);
+      console.log('✅ Workouts loaded:', workouts.length);
+
+      console.log('🎉 User data loading complete!');
 
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('❌ Error loading user data:', error);
     }
   };
 
@@ -155,13 +167,11 @@ function App() {
       const savedProfile = await profileService.upsertProfile(profileWithUserId, currentUserId);
       setUserProfile(savedProfile);
       
-      // Note: Workout routine creation removed - using simple workout tracking instead
-
       // Mark onboarding as completed and persist to localStorage
       setHasCompletedOnboarding(true);
       localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
       
-      setCurrentView('dashboard');
+      // Navigate to dashboard (will be handled by router)
     } catch (error) {
       console.error('Error completing onboarding:', error);
       throw error;
@@ -174,7 +184,6 @@ function App() {
     if (currentUserId) {
       localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
     }
-    setCurrentView('dashboard');
   };
 
   const addMealEntry = async (meal: Omit<MealEntry, 'id' | 'created_at'>) => {
@@ -201,7 +210,7 @@ function App() {
       };
 
       setMealEntries(prev => [mappedMeal, ...prev]);
-      setCurrentView('dashboard');
+      // Navigation will be handled by router
     } catch (error) {
       console.error('Error saving meal:', error);
       throw error;
@@ -232,8 +241,7 @@ function App() {
       const workoutWithUserId = { ...workout, user_id: currentUserId };
       const savedWorkout = await workoutService.createWorkout(workoutWithUserId, currentUserId);
       setWorkouts(prev => [savedWorkout, ...prev]);
-      setIsLoggingWorkout(false);
-      setCurrentView('workouts');
+      // Navigation will be handled by router
     } catch (error) {
       console.error('Error logging workout:', error);
       throw error;
@@ -241,7 +249,7 @@ function App() {
   };
 
   // Calculate today's entries and totals
-  const todaysEntries = useMemo(() => {
+  const todaysEntries = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     console.log('Today\'s date:', today);
     console.log('All meal entries:', mealEntries);
@@ -272,10 +280,16 @@ function App() {
   }, [mealEntries]);
 
   // Calculate workout calories burned today
-  const todaysWorkoutCalories = useMemo(() => {
+  const todaysWorkoutCalories = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return workouts
-      .filter(workout => workout.workout_date === today)
+      .filter(workout => {
+        // Handle both date strings and Date objects
+        if (typeof workout.workout_date === 'string') {
+          return workout.workout_date.includes(today) || workout.workout_date.split('T')[0] === today;
+        }
+        return false;
+      })
       .reduce((total, workout) => total + (workout.calories_burned || 0), 0);
   }, [workouts]);
 
@@ -289,11 +303,22 @@ function App() {
     isAuthenticated,
     currentUserId,
     hasCompletedOnboarding,
-    currentView,
     userProfile: userProfile?.name,
     mealEntriesCount: mealEntries.length,
     workoutsCount: workouts.length
   });
+
+  // Force loading to false if stuck
+  useEffect(() => {
+    if (isLoading) {
+      const timeout = setTimeout(() => {
+        console.log('⚠️ Force setting loading to false due to timeout');
+        setIsLoading(false);
+      }, 8000); // 8 second timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading]);
 
   if (isLoading) {
     return (
@@ -302,6 +327,15 @@ function App() {
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading NutriSnap...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show auth view for unauthenticated users
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <AuthView onLogin={handleLogin} />
       </div>
     );
   }
@@ -316,112 +350,69 @@ function App() {
     );
   }
 
-  // Show auth view for unauthenticated users
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <AuthView onLogin={handleLogin} />
-      </div>
-    );
-  }
-
-  // Show workout logging view
-  if (isLoggingWorkout) {
-    return (
-      <WorkoutView
-        profile={userProfile}
-        workouts={workouts}
-        onWorkoutUpdate={setWorkouts}
-        setCurrentView={setCurrentView}
-      />
-    );
-  }
-
-  // Render main app for authenticated users
-  const renderView = () => {
-    if (!isAuthenticated || !currentUserId) {
-      return <DashboardView entries={[]} profile={null} setCurrentView={setCurrentView} />;
-    }
-
-    // Create a wrapper function to match the expected signature
-    const handleViewChange = (view: View) => {
-      setCurrentView(view);
-    };
-
-    switch (currentView) {
-      case 'onboarding':
-        return (
-          <OnboardingView
-            onComplete={handleOnboardingComplete}
-            onSkip={handleOnboardingSkip}
-          />
-        );
-      case 'add_meal':
-        return (
-          <AddMealView
-            onConfirm={addMealEntry}
-            onCancel={() => setCurrentView('dashboard')}
-          />
-        );
-      case 'profile':
-        return (
-          <ProfileView
-            profile={userProfile!}
-            onLogout={handleLogout}
-            onProfileUpdate={handleProfileUpdate}
-          />
-        );
-      case 'workouts':
-        return (
-          <WorkoutView
-            profile={userProfile}
-            workouts={workouts}
-            onWorkoutUpdate={setWorkouts}
-            setCurrentView={handleViewChange}
-          />
-        );
-      case 'guided_workouts':
-        return (
-          <GuidedWorkoutsView
-            setCurrentView={handleViewChange}
-            currentUserId={currentUserId}
-          />
-        );
-      case 'workout_player':
-        return (
-          <WorkoutPlayer
-            setCurrentView={handleViewChange}
-            currentUserId={currentUserId}
-          />
-        );
-      case 'activity':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Activity Summary</h2>
-            <p className="text-gray-600 dark:text-gray-400">Activity tracking coming soon...</p>
-          </div>
-        );
-      default:
-        return (
-          <DashboardView
-            entries={todaysEntries.entries}
-            profile={userProfile}
-            setCurrentView={handleViewChange}
-            workoutCalories={todaysWorkoutCalories}
-            netCalories={netCalories}
-            caloriesLeft={caloriesLeft}
-          />
-        );
-    }
-  };
-
+  // Main authenticated app with routing
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="pb-20">
-        {renderView()}
+    <Router>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="pb-20">
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <DashboardView
+                  entries={todaysEntries.entries}
+                  profile={userProfile}
+                  workoutCalories={todaysWorkoutCalories}
+                  netCalories={netCalories}
+                  caloriesLeft={caloriesLeft}
+                />
+              } 
+            />
+            <Route 
+              path="/add-meal" 
+              element={
+                <AddMealView
+                  onConfirm={addMealEntry}
+                  onCancel={() => window.history.back()}
+                />
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProfileView
+                  profile={userProfile!}
+                  onLogout={handleLogout}
+                  onProfileUpdate={handleProfileUpdate}
+                />
+              } 
+            />
+            <Route 
+              path="/workouts" 
+              element={
+                <WorkoutView
+                  profile={userProfile}
+                  workouts={workouts}
+                  onWorkoutUpdate={setWorkouts}
+                />
+              } 
+            />
+            
+            <Route 
+              path="/activity" 
+              element={
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Activity Summary</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Activity tracking coming soon...</p>
+                </div>
+              } 
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+        <BottomNav />
       </div>
-      <BottomNav currentView={currentView} onViewChange={setCurrentView} />
-    </div>
+    </Router>
   );
 }
 

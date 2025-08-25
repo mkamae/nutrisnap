@@ -6,14 +6,12 @@ interface WorkoutViewProps {
   profile: UserProfile | null;
   workouts: Workout[];
   onWorkoutUpdate: (workouts: Workout[]) => void;
-  setCurrentView: (view: any) => void;
 }
 
 const WorkoutView: React.FC<WorkoutViewProps> = ({ 
   profile, 
   workouts, 
-  onWorkoutUpdate,
-  setCurrentView 
+  onWorkoutUpdate
 }) => {
   const [isAddingWorkout, setIsAddingWorkout] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
