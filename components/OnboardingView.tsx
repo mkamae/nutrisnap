@@ -314,11 +314,11 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        const step1Valid = profile.name && profile.age && profile.weightKg && profile.heightCm;
+        const step1Valid = !!(profile.name && profile.age && profile.weightKg && profile.heightCm);
         console.log('Step 1 validation:', { name: !!profile.name, age: !!profile.age, weightKg: !!profile.weightKg, heightCm: !!profile.heightCm, valid: step1Valid });
         return step1Valid;
       case 2:
-        const step2Valid = profile.primaryGoal && profile.activityLevel && profile.dailyCalorieGoal;
+        const step2Valid = !!(profile.primaryGoal && profile.activityLevel && profile.dailyCalorieGoal);
         console.log('Step 2 validation:', { primaryGoal: !!profile.primaryGoal, activityLevel: !!profile.activityLevel, dailyCalorieGoal: !!profile.dailyCalorieGoal, valid: step2Valid });
         return step2Valid;
       default:
