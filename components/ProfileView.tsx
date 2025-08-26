@@ -26,7 +26,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
 
   // Update editProfile when profile prop changes (e.g., after successful update)
   useEffect(() => {
-    setEditProfile(profile);
+    if (profile) {
+      setEditProfile(profile);
+    }
+    // Don't update editProfile if profile is null - keep the default values
   }, [profile]);
 
   const handleSave = async () => {
@@ -46,7 +49,25 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
   };
 
   const handleCancel = () => {
-    setEditProfile(profile);
+    if (profile) {
+      setEditProfile(profile);
+    } else {
+      // Reset to default values if no profile exists
+      setEditProfile({
+        name: '',
+        age: 25,
+        gender: 'prefer_not_to_say',
+        weightKg: 70,
+        heightCm: 170,
+        activityLevel: 'moderate',
+        dailyCalorieGoal: 2000,
+        primaryGoal: 'maintain_weight',
+        targetWeightKg: 70,
+        weeklyGoal: 'maintain',
+        fitnessExperience: 'beginner',
+        preferredActivities: []
+      });
+    }
     setIsEditing(false);
   };
 
