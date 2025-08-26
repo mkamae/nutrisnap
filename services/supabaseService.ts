@@ -59,20 +59,6 @@ export const profileService = {
     try {
       console.log('upsertProfile called with:', { profile, userId });
       
-      // First, let's test if we can connect to the database
-      console.log('Testing database connection...');
-      const { data: testData, error: testError } = await supabase
-        .from('profiles')
-        .select('count')
-        .limit(1);
-      
-      if (testError) {
-        console.error('Database connection test failed:', testError);
-        throw new Error(`Database connection failed: ${testError.message}`);
-      }
-      
-      console.log('Database connection successful');
-      
       // Map app field names to database column names
       const profileData = {
         id: profile.id || undefined, // Allow undefined for new profiles
@@ -102,16 +88,26 @@ export const profileService = {
       }
 
       console.log('Attempting to upsert profile...');
-      const { data, error } = await supabase
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timed out after 10 seconds')), 10000);
+      });
+      
+      const upsertPromise = supabase
         .from('profiles')
         .upsert(profileData)
         .select()
         .single();
+      
+      const { data, error } = await Promise.race([upsertPromise, timeoutPromise]);
 
       if (error) {
         console.error('Error upserting profile:', error);
-        throw new Error('Failed to save profile');
+        throw new Error(`Failed to save profile: ${error.message}`);
       }
+
+      console.log('Profile upserted successfully:', data);
 
       // Map back to app format
       return {
