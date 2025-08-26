@@ -6,7 +6,7 @@ import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
 
 interface AddMealViewProps {
-  onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => void;
+  onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -14,10 +14,12 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -145,19 +147,78 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
     }
   };
 
-  const handleConfirm = () => {
-    if (analysisResult && previewUrl) {
+  const handleConfirm = async () => {
+    console.log('=== HANDLE CONFIRM DEBUG ===');
+    console.log('Analysis result:', analysisResult);
+    console.log('Preview URL:', previewUrl);
+    
+    if (!analysisResult) {
+      setError('No analysis result available. Please analyze an image first.');
+      return;
+    }
+    
+    if (!previewUrl) {
+      setError('No image available. Please select an image first.');
+      return;
+    }
+    
+    // Validate required fields
+    if (!analysisResult.mealName || !analysisResult.mealName.trim()) {
+      setError('Please enter a meal name.');
+      return;
+    }
+    
+    if (!analysisResult.calories || analysisResult.calories <= 0) {
+      setError('Please enter valid calories.');
+      return;
+    }
+    
+    setIsConfirming(true);
+    setError(null);
+    
+    try {
+      // Ensure all numeric fields have proper values
       const meal: Omit<MealEntry, 'id' | 'created_at'> = {
-        mealName: analysisResult.mealName,
-        calories: analysisResult.calories,
-        protein: analysisResult.protein,
-        carbs: analysisResult.carbs,
-        fat: analysisResult.fat,
-        portionSize: analysisResult.portionSize,
+        mealName: analysisResult.mealName.trim(),
+        calories: Math.max(0, analysisResult.calories || 0),
+        protein: Math.max(0, analysisResult.protein || 0),
+        carbs: Math.max(0, analysisResult.carbs || 0),
+        fat: Math.max(0, analysisResult.fat || 0),
+        portionSize: analysisResult.portionSize?.trim() || '1 serving',
         imageUrl: previewUrl,
         date: new Date().toISOString().split('T')[0]
       };
-      onConfirm(meal);
+      
+      console.log('Meal data to confirm:', meal);
+      console.log('Calling onConfirm with meal:', meal);
+      
+      // Call the parent's onConfirm function
+      await onConfirm(meal);
+      
+      console.log('Meal confirmed successfully!');
+      
+      // Show success state
+      setIsSuccess(true);
+      setDebugInfo('Meal added successfully! Redirecting...');
+      
+      // Clear the form after successful confirmation
+      setTimeout(() => {
+        setAnalysisResult(null);
+        setImageFile(null);
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setPreviewUrl(null);
+        setError(null);
+        setIsSuccess(false);
+        setIsConfirming(false);
+        setDebugInfo('');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error in handleConfirm:', error);
+      setError(`Failed to add meal: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsConfirming(false);
     }
   };
   
@@ -359,9 +420,10 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
                   </button>
                   <button
                     onClick={handleConfirm}
+                    disabled={isLoading || isConfirming}
                     className="btn-primary"
                   >
-                    Add Meal
+                    {isConfirming ? 'Adding...' : 'Add Meal'}
                   </button>
                 </div>
               </div>
@@ -377,12 +439,74 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
             </div>
           )}
 
+          {/* Success Display */}
+          {isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm text-green-600 dark:text-green-400 text-center">
+                Meal added successfully! Redirecting...
+              </p>
+            </div>
+          )}
+
           {/* Debug Info (Development Only) */}
           {debugInfo && process.env.NODE_ENV === 'development' && (
             <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 Debug: {debugInfo}
               </p>
+            </div>
+          )}
+
+          {/* Test Button (Development Only) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="card">
+              <h3 className="card-header">Debug Tools</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    console.log('=== TEST MEAL DATA ===');
+                    console.log('Current analysis result:', analysisResult);
+                    console.log('Current preview URL:', previewUrl);
+                    console.log('Current image file:', imageFile);
+                    
+                    // Create a test meal
+                    const testMeal: Omit<MealEntry, 'id' | 'created_at'> = {
+                      mealName: 'Test Meal',
+                      calories: 500,
+                      protein: 25,
+                      carbs: 60,
+                      fat: 20,
+                      portionSize: '1 serving',
+                      imageUrl: 'data:image/jpeg;base64,test',
+                      date: new Date().toISOString().split('T')[0]
+                    };
+                    
+                    console.log('Test meal data:', testMeal);
+                    console.log('Calling onConfirm with test meal...');
+                    
+                    // Test the onConfirm function
+                    onConfirm(testMeal).then(() => {
+                      console.log('Test meal confirmed successfully!');
+                      setDebugInfo('Test meal added successfully!');
+                    }).catch((error) => {
+                      console.error('Test meal failed:', error);
+                      setError(`Test meal failed: ${error.message}`);
+                    });
+                  }}
+                  className="btn-secondary w-full"
+                >
+                  Test Meal Addition
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setDebugInfo(`Analysis Result: ${JSON.stringify(analysisResult, null, 2)}`);
+                  }}
+                  className="btn-secondary w-full"
+                >
+                  Log Analysis Result
+                </button>
+              </div>
             </div>
           )}
         </div>

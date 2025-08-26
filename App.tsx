@@ -148,12 +148,19 @@ function App() {
 
 
   const addMealEntry = async (meal: Omit<MealEntry, 'id' | 'created_at'>) => {
+    console.log('=== ADD MEAL ENTRY DEBUG ===');
+    console.log('Received meal data:', meal);
+    console.log('Current user ID:', currentUserId);
+    
     if (!currentUserId) {
+      console.error('No authenticated user found');
       throw new Error('No authenticated user found');
     }
 
     try {
+      console.log('Calling mealService.addMeal...');
       const savedMeal = await mealService.addMeal(meal, currentUserId);
+      console.log('Meal saved successfully:', savedMeal);
       
       // Map the saved meal to the correct format
       const mappedMeal: MealEntry = {
@@ -170,8 +177,20 @@ function App() {
         created_at: savedMeal.created_at
       };
 
-      setMealEntries(prev => [mappedMeal, ...prev]);
-      // Navigation will be handled by router
+      console.log('Mapped meal:', mappedMeal);
+      console.log('Updating meal entries state...');
+      
+      setMealEntries(prev => {
+        const newEntries = [mappedMeal, ...prev];
+        console.log('New meal entries:', newEntries);
+        return newEntries;
+      });
+      
+      console.log('Meal entry added successfully!');
+      
+      // Navigate back to dashboard after successful meal addition
+      window.history.back();
+      
     } catch (error) {
       console.error('Error saving meal:', error);
       throw error;
