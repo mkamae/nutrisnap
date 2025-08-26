@@ -185,8 +185,20 @@ function App() {
       console.log('Updating profile:', updatedProfile);
       const savedProfile = await profileService.upsertProfile(updatedProfile, currentUserId);
       console.log('Profile saved to DB:', savedProfile);
+      
+      // Force a state update with the new profile
       setUserProfile(savedProfile);
       console.log('User profile state updated:', savedProfile);
+      
+      // Also update localStorage to persist the profile
+      if (savedProfile) {
+        localStorage.setItem(`user_profile_${currentUserId}`, JSON.stringify(savedProfile));
+        console.log('Profile saved to localStorage');
+      }
+      
+      // Force a re-render by updating a timestamp
+      setUserProfile(prev => ({ ...savedProfile, updated_at: new Date().toISOString() }));
+      
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;

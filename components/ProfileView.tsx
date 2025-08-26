@@ -26,8 +26,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
 
   // Update editProfile when profile prop changes (e.g., after successful update)
   useEffect(() => {
+    console.log('ProfileView: profile prop changed:', profile);
     if (profile) {
+      console.log('ProfileView: updating editProfile with profile:', profile);
       setEditProfile(profile);
+      // If we have a profile now, stop editing
+      setIsEditing(false);
     }
     // Don't update editProfile if profile is null - keep the default values
   }, [profile]);
