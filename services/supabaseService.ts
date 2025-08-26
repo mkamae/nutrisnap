@@ -1,36 +1,51 @@
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, MealEntry, Workout } from '../types';
 
-const supabaseUrl = __SUPABASE_URL__;
-const supabaseAnonKey = __SUPABASE_ANON_KEY__;
+// Access environment variables directly
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.error('❌ Missing Supabase environment variables:');
+  console.error('VITE_SUPABASE_URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Set' : '❌ Missing');
+  throw new Error('Missing Supabase environment variables. Check your .env.local file.');
 }
+
+console.log('🔧 Supabase configuration loaded:');
+console.log('URL:', supabaseUrl);
+console.log('Key length:', supabaseAnonKey.length);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Test connection function
+// Test connection function with timeout
 export const testSupabaseConnection = async () => {
   try {
-    console.log('Testing Supabase connection...');
-    console.log('URL:', supabaseUrl);
-    console.log('Key length:', supabaseAnonKey?.length || 0);
+    console.log('🧪 Testing Supabase connection...');
     
-    const { data, error } = await supabase
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Connection test timed out after 10 seconds')), 10000);
+    });
+    
+    const connectionPromise = supabase
       .from('profiles')
       .select('id')
       .limit(1);
     
+    const result = await Promise.race([connectionPromise, timeoutPromise]);
+    const { data, error } = result;
+    
     if (error) {
-      console.error('Connection test failed:', error);
+      console.error('❌ Connection test failed:', error);
       return { success: false, error: error.message };
     }
     
-    console.log('Connection test successful');
+    console.log('✅ Supabase connection successful');
     return { success: true, data };
   } catch (error) {
-    console.error('Connection test error:', error);
+    console.error('❌ Connection test error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -91,24 +106,6 @@ export const profileService = {
         throw new Error('Missing required profile fields');
       }
       
-      // First, test basic Supabase connection
-      console.log('Testing Supabase connection...');
-      try {
-        const { data: testData, error: testError } = await supabase
-          .from('profiles')
-          .select('id')
-          .limit(1);
-        
-        if (testError) {
-          console.error('Supabase connection test failed:', testError);
-          throw new Error(`Supabase connection failed: ${testError.message}`);
-        }
-        console.log('Supabase connection successful');
-      } catch (testError) {
-        console.error('Supabase connection test error:', testError);
-        throw new Error(`Supabase connection test failed: ${testError}`);
-      }
-      
       // Map app field names to database column names
       // Use all available fields from the comprehensive database schema
       const profileData = {
@@ -125,30 +122,40 @@ export const profileService = {
         target_weight_kg: profile.targetWeightKg || 70,
         weekly_goal: profile.weeklyGoal || 'maintain',
         body_fat_percentage: profile.bodyFatPercentage || 0,
-        muscle_mass_kg: profile.muscleMassKg || 0,
+        muscle_mass_kg: profile.muscleMassKg || 1, // Changed from 0 to 1 to avoid constraint violation
         preferred_activities: profile.preferredActivities || [],
         fitness_experience: profile.fitnessExperience || 'beginner'
       };
 
-      console.log('Profile data to insert:', profileData);
+      console.log('📝 Profile data to insert:', profileData);
 
       // Remove undefined id field for new profiles
       if (!profileData.id) {
         delete profileData.id;
       }
 
-      console.log('Attempting to upsert profile...');
+      console.log('🚀 Attempting to upsert profile...');
       
-      // Perform the upsert operation - FIXED: removed redundant user_id spread
-      const { data, error } = await supabase
+      // Perform the upsert operation with timeout protection
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timed out after 15 seconds')), 15000);
+      });
+      
+      const upsertPromise = supabase
         .from('profiles')
         .upsert(profileData)
         .select()
         .single();
+      
+      const result = await Promise.race([upsertPromise, timeoutPromise]);
+      const { data, error } = result;
+
+      // Log Supabase response as requested
+      console.log('📊 Supabase response:', { data, error });
 
       // Log error if it exists
       if (error) {
-        console.error('Error upserting profile:', error);
+        console.error('❌ Error upserting profile:', error);
         console.error('Error details:', {
           code: error.code,
           message: error.message,
@@ -158,7 +165,7 @@ export const profileService = {
         throw new Error(`Failed to save profile: ${error.message}`);
       }
 
-      console.log('Profile upserted successfully:', data);
+      console.log('✅ Profile upserted successfully:', data);
 
       // Verify the profile was saved by loading it back
       const { data: verifyData, error: verifyError } = await supabase
@@ -168,11 +175,11 @@ export const profileService = {
         .single();
       
       if (verifyError) {
-        console.error('Error verifying profile save:', verifyError);
+        console.error('❌ Error verifying profile save:', verifyError);
         throw new Error(`Profile saved but verification failed: ${verifyError.message}`);
       }
       
-      console.log('Profile verification successful:', verifyData);
+      console.log('✅ Profile verification successful:', verifyData);
 
       // Map back to app format - use actual database values
       const mappedProfile = {
@@ -190,17 +197,17 @@ export const profileService = {
         targetWeightKg: data.target_weight_kg || 70,
         weeklyGoal: data.weekly_goal || 'maintain',
         bodyFatPercentage: data.body_fat_percentage || 0,
-        muscleMassKg: data.muscle_mass_kg || 0,
+        muscleMassKg: data.muscle_mass_kg || 1, // Changed from 0 to 1
         preferredActivities: data.preferred_activities || [],
         fitnessExperience: data.fitness_experience || 'beginner',
         updated_at: data.updated_at
       };
 
-      console.log('Mapped profile for return:', mappedProfile);
+      console.log('🔄 Mapped profile for return:', mappedProfile);
       return mappedProfile;
       
     } catch (error) {
-      console.error('Error in upsertProfile:', error);
+      console.error('❌ Error in upsertProfile:', error);
       throw error;
     }
   }

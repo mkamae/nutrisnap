@@ -9,9 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // Explicitly define environment variables for production builds
-      __SUPABASE_URL__: JSON.stringify(env.VITE_SUPABASE_URL),
-      __SUPABASE_ANON_KEY__: JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+      // Only define Gemini API key as global, Supabase vars will be accessed directly
       __GEMINI_API_KEY__: JSON.stringify(env.VITE_GEMINI_API_KEY)
     },
     build: {
