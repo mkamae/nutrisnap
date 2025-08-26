@@ -47,6 +47,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         <p className="text-gray-600 dark:text-gray-400">
           Let's track your nutrition and fitness today
         </p>
+        
+        {/* Profile Setup Prompt */}
+        {!profile && (
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-blue-800 dark:text-blue-200 text-sm mb-2">
+              Complete your profile to get personalized recommendations
+            </p>
+            <button
+              onClick={() => navigate('/profile')}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+            >
+              Set Up Profile
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Calories Overview */}

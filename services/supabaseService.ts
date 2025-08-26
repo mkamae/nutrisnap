@@ -22,7 +22,7 @@ export const profileService = {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows returned
+          // No rows returned - return null, profile will be created when user edits
           return null;
         }
         console.error('Error fetching profile:', error);
@@ -57,6 +57,22 @@ export const profileService = {
 
   async upsertProfile(profile: UserProfile, userId: string): Promise<UserProfile> {
     try {
+      console.log('upsertProfile called with:', { profile, userId });
+      
+      // First, let's test if we can connect to the database
+      console.log('Testing database connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('profiles')
+        .select('count')
+        .limit(1);
+      
+      if (testError) {
+        console.error('Database connection test failed:', testError);
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+      
+      console.log('Database connection successful');
+      
       // Map app field names to database column names
       const profileData = {
         id: profile.id || undefined, // Allow undefined for new profiles
@@ -78,11 +94,14 @@ export const profileService = {
         updated_at: new Date().toISOString()
       };
 
+      console.log('Profile data to insert:', profileData);
+
       // Remove undefined id field for new profiles
       if (!profileData.id) {
         delete profileData.id;
       }
 
+      console.log('Attempting to upsert profile...');
       const { data, error } = await supabase
         .from('profiles')
         .upsert(profileData)

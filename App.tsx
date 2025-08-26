@@ -7,7 +7,7 @@ import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
-import OnboardingView from './components/OnboardingView';
+
 import WorkoutView from './components/WorkoutView';
 import BottomNav from './components/BottomNav';
 
@@ -19,7 +19,7 @@ function App() {
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
 
   // Initialize app
   useEffect(() => {
@@ -71,7 +71,7 @@ function App() {
           setUserProfile(null);
           setMealEntries([]);
           setWorkouts([]);
-          setHasCompletedOnboarding(false);
+  
         }
       }
     );
@@ -83,25 +83,14 @@ function App() {
     try {
       console.log('🔄 Starting to load user data for:', userId);
       
-      // Check localStorage for onboarding completion status
-      const onboardingCompleted = localStorage.getItem(`onboarding_completed_${userId}`);
-      console.log('📱 Onboarding completed from localStorage:', onboardingCompleted);
-      
       // Load profile
       console.log('👤 Loading profile...');
       const profile = await profileService.getProfile(userId);
       if (profile) {
         setUserProfile(profile);
-        setHasCompletedOnboarding(true);
         console.log('✅ Profile loaded from database:', profile);
-      } else if (onboardingCompleted === 'true') {
-        // User has completed onboarding before but profile might be missing
-        // This could happen if the database was cleared or there was an error
-        console.log('⚠️ Onboarding completed before but no profile found, setting as completed');
-        setHasCompletedOnboarding(true);
       } else {
-        console.log('❌ No profile found and no onboarding record, user needs onboarding');
-        setHasCompletedOnboarding(false);
+        console.log('❌ No profile found, user will need to create one from Profile page');
       }
 
       // Load meals
@@ -156,35 +145,7 @@ function App() {
     }
   };
 
-  const handleOnboardingComplete = async (profile: UserProfile) => {
-    if (!currentUserId) return;
 
-    try {
-      // Ensure profile has the correct user_id
-      const profileWithUserId = { ...profile, user_id: currentUserId };
-      
-      // Save profile to database
-      const savedProfile = await profileService.upsertProfile(profileWithUserId, currentUserId);
-      setUserProfile(savedProfile);
-      
-      // Mark onboarding as completed and persist to localStorage
-      setHasCompletedOnboarding(true);
-      localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
-      
-      // Navigate to dashboard (will be handled by router)
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      throw error;
-    }
-  };
-
-  const handleOnboardingSkip = () => {
-    setHasCompletedOnboarding(true);
-    // Also persist the skip to localStorage
-    if (currentUserId) {
-      localStorage.setItem(`onboarding_completed_${currentUserId}`, 'true');
-    }
-  };
 
   const addMealEntry = async (meal: Omit<MealEntry, 'id' | 'created_at'>) => {
     if (!currentUserId) {
@@ -302,7 +263,6 @@ function App() {
     isLoading,
     isAuthenticated,
     currentUserId,
-    hasCompletedOnboarding,
     userProfile: userProfile?.name,
     mealEntriesCount: mealEntries.length,
     workoutsCount: workouts.length
@@ -340,15 +300,8 @@ function App() {
     );
   }
 
-  // Show onboarding for new users
-  if (isAuthenticated && !hasCompletedOnboarding) {
-    return (
-      <OnboardingView
-        onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
-      />
-    );
-  }
+  // Users go straight to dashboard after authentication
+  console.log('Auth check:', { isAuthenticated, currentUserId });
 
   // Main authenticated app with routing
   return (

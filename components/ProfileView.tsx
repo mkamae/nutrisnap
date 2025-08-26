@@ -2,14 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 
 interface ProfileViewProps {
-  profile: UserProfile;
+  profile: UserProfile | null;
   onLogout: () => void;
   onProfileUpdate: (profile: UserProfile) => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editProfile, setEditProfile] = useState<UserProfile>(profile);
+  const [isEditing, setIsEditing] = useState(!profile); // Start editing if no profile
+  const [editProfile, setEditProfile] = useState<UserProfile>(profile || {
+    name: '',
+    age: 25,
+    gender: 'prefer_not_to_say',
+    weightKg: 70,
+    heightCm: 170,
+    activityLevel: 'moderate',
+    dailyCalorieGoal: 2000,
+    primaryGoal: 'maintain_weight',
+    targetWeightKg: 70,
+    weeklyGoal: 'maintain',
+    fitnessExperience: 'beginner',
+    preferredActivities: []
+  });
 
   // Update editProfile when profile prop changes (e.g., after successful update)
   useEffect(() => {
@@ -55,20 +68,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                {editProfile.name ? editProfile.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {profile.name || 'User'}
+                  {profile ? (profile.name || 'User') : 'Set Up Your Profile'}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400">Your personal profile</p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {profile ? 'Your personal profile' : 'Create your profile to get started'}
+                </p>
               </div>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              {isEditing ? 'Cancel' : 'Edit'}
+              {isEditing ? 'Cancel' : (profile ? 'Edit' : 'Create Profile')}
             </button>
           </div>
 
