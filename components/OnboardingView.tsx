@@ -44,6 +44,8 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
   };
 
   const handleComplete = () => {
+    console.log('handleComplete called, profile:', profile);
+    console.log('canProceed result:', canProceed());
     const completeProfile = profile as UserProfile;
     onComplete(completeProfile);
   };
@@ -78,7 +80,12 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
             <input
               type="number"
               value={profile.age || ''}
-              onChange={(e) => handleProfileChange('age', parseInt(e.target.value))}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value)) {
+                  handleProfileChange('age', value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               min="13"
               max="120"
@@ -110,7 +117,12 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
             <input
               type="number"
               value={profile.weightKg || ''}
-              onChange={(e) => handleProfileChange('weightKg', parseFloat(e.target.value))}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                  handleProfileChange('weightKg', value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               step="0.1"
               min="30"
@@ -125,7 +137,12 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
             <input
               type="number"
               value={profile.heightCm || ''}
-              onChange={(e) => handleProfileChange('heightCm', parseInt(e.target.value))}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value)) {
+                  handleProfileChange('heightCm', value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               min="100"
               max="250"
@@ -171,7 +188,12 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
             <input
               type="number"
               value={profile.targetWeightKg || ''}
-              onChange={(e) => handleProfileChange('targetWeightKg', parseFloat(e.target.value))}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                  handleProfileChange('targetWeightKg', value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               step="0.1"
               min="30"
@@ -182,13 +204,18 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
 
         {profile.primaryGoal === 'gain_weight' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Target Weight (kg)
             </label>
             <input
               type="number"
               value={profile.targetWeightKg || ''}
-              onChange={(e) => handleProfileChange('targetWeightKg', parseFloat(e.target.value))}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                  handleProfileChange('targetWeightKg', value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               step="0.1"
               min="30"
@@ -254,7 +281,12 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
           <input
             type="number"
             value={profile.dailyCalorieGoal || ''}
-            onChange={(e) => handleProfileChange('dailyCalorieGoal', parseInt(e.target.value))}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (!isNaN(value)) {
+                handleProfileChange('dailyCalorieGoal', value);
+              }
+            }}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             min="1200"
             max="5000"
@@ -282,9 +314,13 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return profile.name && profile.age && profile.weightKg && profile.heightCm;
+        const step1Valid = profile.name && profile.age && profile.weightKg && profile.heightCm;
+        console.log('Step 1 validation:', { name: !!profile.name, age: !!profile.age, weightKg: !!profile.weightKg, heightCm: !!profile.heightCm, valid: step1Valid });
+        return step1Valid;
       case 2:
-        return profile.primaryGoal && profile.activityLevel && profile.dailyCalorieGoal;
+        const step2Valid = profile.primaryGoal && profile.activityLevel && profile.dailyCalorieGoal;
+        console.log('Step 2 validation:', { primaryGoal: !!profile.primaryGoal, activityLevel: !!profile.activityLevel, dailyCalorieGoal: !!profile.dailyCalorieGoal, valid: step2Valid });
+        return step2Valid;
       default:
         return false;
     }
@@ -332,13 +368,20 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
                 Next
               </button>
             ) : (
-              <button
-                onClick={handleComplete}
-                disabled={!canProceed()}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Complete Setup
-              </button>
+              <>
+                {/* Debug info for step 2 */}
+                <div className="text-xs text-gray-500 mb-2">
+                  Debug: primaryGoal={profile.primaryGoal || 'missing'}, activityLevel={profile.activityLevel || 'missing'}, dailyCalorieGoal={profile.dailyCalorieGoal || 'missing'}
+                </div>
+                <button
+                  onClick={handleComplete}
+                  disabled={!canProceed()}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  style={{ opacity: canProceed() ? 1 : 0.5 }}
+                >
+                  Complete Setup {!canProceed() ? '(Disabled)' : ''}
+                </button>
+              </>
             )}
           </div>
         </div>
