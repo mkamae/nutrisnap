@@ -55,23 +55,24 @@ export const profileService = {
       }
 
       // Map database column names to app field names
+      // Handle missing columns gracefully with default values
       return {
         id: data.id,
         user_id: data.user_id,
         name: data.name,
         age: data.age,
-        gender: data.gender,
+        gender: data.gender || 'prefer_not_to_say',
         weightKg: data.weight_kg,
         heightCm: data.height_cm,
         activityLevel: data.activity_level,
         dailyCalorieGoal: data.daily_calorie_goal,
-        primaryGoal: data.primary_goal,
-        targetWeightKg: data.target_weight_kg,
-        weeklyGoal: data.weekly_goal,
-        bodyFatPercentage: data.body_fat_percentage,
-        muscleMassKg: data.muscle_mass_kg,
-        preferredActivities: data.preferred_activities,
-        fitnessExperience: data.fitness_experience,
+        primaryGoal: data.primary_goal || 'maintain_weight',
+        targetWeightKg: data.target_weight_kg || 70,
+        weeklyGoal: data.weekly_goal || 'maintain',
+        bodyFatPercentage: data.body_fat_percentage || 0,
+        muscleMassKg: data.muscle_mass_kg || 0,
+        preferredActivities: data.preferred_activities || [],
+        fitnessExperience: data.fitness_experience || 'beginner',
         updated_at: data.updated_at
       };
     } catch (error) {
@@ -102,25 +103,17 @@ export const profileService = {
         throw new Error(`Supabase connection test failed: ${testError}`);
       }
       
+      // Flatten the profile object when calling Supabase
       // Map app field names to database column names
       const profileData = {
         id: profile.id || undefined, // Allow undefined for new profiles
         user_id: userId,
         name: profile.name,
         age: profile.age,
-        gender: profile.gender,
         weight_kg: profile.weightKg,
         height_cm: profile.heightCm,
         activity_level: profile.activityLevel,
-        daily_calorie_goal: profile.dailyCalorieGoal,
-        primary_goal: profile.primaryGoal,
-        target_weight_kg: profile.targetWeightKg,
-        weekly_goal: profile.weeklyGoal,
-        body_fat_percentage: profile.bodyFatPercentage,
-        muscle_mass_kg: profile.muscleMassKg,
-        preferred_activities: profile.preferredActivities,
-        fitness_experience: profile.fitnessExperience,
-        updated_at: new Date().toISOString()
+        daily_calorie_goal: profile.dailyCalorieGoal
       };
 
       console.log('Profile data to insert:', profileData);
@@ -132,19 +125,14 @@ export const profileService = {
 
       console.log('Attempting to upsert profile...');
       
-      // Try the upsert operation with a shorter timeout
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database operation timed out after 5 seconds')), 5000);
-      });
-      
-      const upsertPromise = supabase
+      // Perform the upsert operation with flattened profile object
+      const { data, error } = await supabase
         .from('profiles')
-        .upsert(profileData)
+        .upsert([{ user_id: userId, ...profileData }])
         .select()
         .single();
-      
-      const { data, error } = await Promise.race([upsertPromise, timeoutPromise]);
 
+      // Log error if it exists
       if (error) {
         console.error('Error upserting profile:', error);
         throw new Error(`Failed to save profile: ${error.message}`);
@@ -152,37 +140,39 @@ export const profileService = {
 
       console.log('Profile upserted successfully:', data);
 
-      // Map back to app format
+      // Verify the profile was saved by loading it back
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('Loaded profile:', verifyData, verifyError);
+
+      // Map back to app format - only include fields that exist in the database
       return {
         id: data.id,
         user_id: data.user_id,
         name: data.name,
         age: data.age,
-        gender: data.gender,
         weightKg: data.weight_kg,
         heightCm: data.height_cm,
         activityLevel: data.activity_level,
         dailyCalorieGoal: data.daily_calorie_goal,
-        primaryGoal: data.primary_goal,
-        targetWeightKg: data.target_weight_kg,
-        weeklyGoal: data.weekly_goal,
-        bodyFatPercentage: data.body_fat_percentage,
-        muscleMassKg: data.muscle_mass_kg,
-        preferredActivities: data.preferred_activities,
-        fitnessExperience: data.fitness_experience,
+        // Set default values for fields not in the current database schema
+        gender: 'prefer_not_to_say',
+        primaryGoal: 'maintain_weight',
+        targetWeightKg: 70,
+        weeklyGoal: 'maintain',
+        bodyFatPercentage: 0,
+        muscleMassKg: 0,
+        preferredActivities: [],
+        fitnessExperience: 'beginner',
         updated_at: data.updated_at
       };
     } catch (error) {
       console.error('Error in upsertProfile:', error);
-      
-      // Provide more specific error information
-      if (error.message.includes('timed out')) {
-        throw new Error('Database connection is slow or unresponsive. Please check your internet connection and try again.');
-      } else if (error.message.includes('Supabase connection failed')) {
-        throw new Error('Unable to connect to the database. Please check your Supabase configuration.');
-      } else {
-        throw error;
-      }
+      throw error;
     }
   }
 };

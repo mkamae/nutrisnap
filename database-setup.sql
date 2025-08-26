@@ -447,20 +447,37 @@ ON CONFLICT (name, brand) DO NOTHING;
 -- =====================================================
 
 -- Daily nutrition summary view
-CREATE OR REPLACE VIEW daily_nutrition_summary AS
+DROP VIEW IF EXISTS daily_activity_summary CASCADE;
+
+CREATE OR REPLACE VIEW daily_activity_summary AS
 SELECT 
-  m.user_id,
-  m.date,
-  SUM(m.calories) as total_calories,
-  SUM(m.protein) as total_protein,
-  SUM(m.carbs) as total_carbs,
-  SUM(m.fat) as total_fat,
-  SUM(m.fiber) as total_fiber,
-  SUM(m.sugar) as total_sugar,
-  SUM(m.sodium) as total_sodium,
-  COUNT(*) as meal_count
-FROM public.meals m
-GROUP BY m.user_id, m.date;
+  u.id as user_id,
+  u.email,
+  p.name,
+  d.log_date,
+  COALESCE(SUM(m.calories), 0) as calories_consumed,
+  COALESCE(SUM(m.protein), 0) as protein_consumed,
+  COALESCE(SUM(m.carbs), 0) as carbs_consumed,
+  COALESCE(SUM(m.fat), 0) as fat_consumed,
+  COALESCE(SUM(ws.calories_burned), 0) as calories_burned,
+  COALESCE(SUM(ws.total_duration_minutes), 0) as workout_minutes,
+  p.daily_calorie_goal,
+  (p.daily_calorie_goal - COALESCE(SUM(m.calories), 0) + COALESCE(SUM(ws.calories_burned), 0)) as net_calories,
+  CASE 
+    WHEN COALESCE(SUM(ws.total_duration_minutes), 0) > 0 THEN 'Active'
+    ELSE 'Rest Day'
+  END as activity_status
+FROM public.users u
+JOIN public.profiles p ON u.id = p.user_id
+CROSS JOIN generate_series(
+  CURRENT_DATE - INTERVAL '30 days', 
+  CURRENT_DATE, 
+  '1 day'::interval
+) d(log_date)
+LEFT JOIN public.meals m ON u.id = m.user_id AND m.date = d.log_date
+LEFT JOIN public.workout_sessions ws ON u.id = ws.user_id AND ws.session_date = d.log_date
+GROUP BY u.id, u.email, p.name, d.log_date, p.daily_calorie_goal
+ORDER BY d.log_date DESC;
 
 -- Weekly progress view
 CREATE OR REPLACE VIEW weekly_progress AS

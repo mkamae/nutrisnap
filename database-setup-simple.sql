@@ -172,12 +172,14 @@ CREATE TABLE IF NOT EXISTS public.water_logs (
 );
 
 -- Daily activity summary view
+DROP VIEW IF EXISTS daily_activity_summary CASCADE;
+
 CREATE OR REPLACE VIEW daily_activity_summary AS
 SELECT 
   u.id as user_id,
   u.email,
   p.name,
-  d.date,
+  d.log_date,
   COALESCE(SUM(m.calories), 0) as calories_consumed,
   COALESCE(SUM(m.protein), 0) as protein_consumed,
   COALESCE(SUM(m.carbs), 0) as carbs_consumed,
@@ -196,11 +198,11 @@ CROSS JOIN generate_series(
   CURRENT_DATE - INTERVAL '30 days', 
   CURRENT_DATE, 
   '1 day'::interval
-) d(date)
-LEFT JOIN public.meals m ON u.id = m.user_id AND m.date = d.date
-LEFT JOIN public.workout_sessions ws ON u.id = ws.user_id AND ws.session_date = d.date
-GROUP BY u.id, u.email, p.name, d.date, p.daily_calorie_goal
-ORDER BY d.date DESC;
+) d(log_date)
+LEFT JOIN public.meals m ON u.id = m.user_id AND m.date = d.log_date
+LEFT JOIN public.workout_sessions ws ON u.id = ws.user_id AND ws.session_date = d.log_date
+GROUP BY u.id, u.email, p.name, d.log_date, p.daily_calorie_goal
+ORDER BY d.log_date DESC;
 
 -- Step 6: Set up Row Level Security (RLS)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
