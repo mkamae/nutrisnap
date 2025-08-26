@@ -180,125 +180,212 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add Meal</h1>
-          <button
-            onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            ✕
-          </button>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add Meal</h1>
+          <p className="text-gray-600 dark:text-gray-400">Take a photo or upload an image to analyze your meal</p>
         </div>
 
-        {/* Image Upload */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          {previewUrl ? (
-            <div className="w-full">
-              <img src={previewUrl} alt="Meal preview" className="w-full h-48 object-cover rounded-lg mb-4" />
-              <button 
-                onClick={handleClearSelection} 
-                className="w-full text-center text-sm text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-              >
-                Choose a different image
-              </button>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg font-semibold text-center mb-4 text-gray-700 dark:text-gray-300">
-                Add a Meal Photo
-              </h3>
-              <div className="space-y-3">
-                <label htmlFor="meal-upload" className="w-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">Upload from Library</span>
+        {/* Main Content */}
+        <div className="space-y-6">
+          {/* Image Upload Section */}
+          <div className="card">
+            <h2 className="card-header">Upload Image</h2>
+            <p className="card-subtitle">Choose an image file or take a photo with your camera</p>
+            
+            {/* File Upload */}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="image-upload" className="form-label">
+                  Select Image File
                 </label>
-                <input id="meal-upload" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-                
-                <button 
-                  onClick={handleStartCamera} 
-                  className="w-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="form-input"
+                />
+              </div>
+              
+              {/* Camera Button */}
+              <div className="text-center">
+                <button
+                  onClick={isCameraOpen ? handleStopCamera : handleStartCamera}
+                  className={`btn-primary flex items-center justify-center mx-auto ${
+                    isCameraOpen ? 'bg-red-600 hover:bg-red-700' : ''
+                  }`}
                 >
-                  <CameraIcon className="h-12 w-12 text-gray-500 dark:text-gray-400"/>
-                  <span className="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-400">Use Camera</span>
+                  <CameraIcon className="w-5 h-5 mr-2" />
+                  {isCameraOpen ? 'Stop Camera' : 'Open Camera'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Camera View */}
+          {isCameraOpen && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Camera</h3>
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full rounded-lg"
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                <button
+                  onClick={handleTakePicture}
+                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 btn-primary"
+                >
+                  Take Picture
                 </button>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-        
-        {/* Debug Info */}
-        {debugInfo && (
-          <p className="text-xs text-gray-500 text-center mb-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-            {debugInfo}
-          </p>
-        )}
-        
-        {/* Analyze Button */}
-        {previewUrl && !analysisResult && (
-          <button
-            onClick={handleAnalyze}
-            disabled={!imageFile || isLoading}
-            className="w-full mb-6 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? 'Analyzing...' : 'Analyze Meal'}
-          </button>
-        )}
-
-        {/* Loading State */}
-        {isLoading && <Loader />}
-
-        {/* Analysis Results */}
-        {analysisResult && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 animate-fade-in">
-            <h3 className="text-xl font-bold text-center mb-3">{analysisResult.mealName}</h3>
-            <p className="text-center text-gray-500 dark:text-gray-400 mb-4">{analysisResult.portionSize}</p>
-            
-            <div className="grid grid-cols-2 gap-4 text-center mb-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg">
-                <p className="text-sm text-green-800 dark:text-green-300">Calories</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {analysisResult.calories}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-300">Protein</p>
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  {analysisResult.protein}g
-                </p>
-              </div>
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                <p className="text-sm text-emerald-800 dark:text-emerald-300">Carbs</p>
-                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                  {analysisResult.carbs}g
-                </p>
-              </div>
-              <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-                <p className="text-sm text-amber-800 dark:text-amber-300">Fat</p>
-                <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                  {analysisResult.fat}g
-                </p>
+          {/* Image Preview */}
+          {previewUrl && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Image Preview</h3>
+              <div className="space-y-4">
+                <img
+                  src={previewUrl}
+                  alt="Meal preview"
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleClearSelection}
+                    className="btn-secondary"
+                  >
+                    Clear Image
+                  </button>
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isLoading}
+                    className="btn-primary"
+                  >
+                    {isLoading ? 'Analyzing...' : 'Analyze Image'}
+                  </button>
+                </div>
               </div>
             </div>
-            
-            <button
-              onClick={handleConfirm}
-              className="w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Confirm & Add Meal
-            </button>
-          </div>
-        )}
+          )}
+
+          {/* Analysis Results */}
+          {analysisResult && (
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Analysis Results</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Meal Name</label>
+                    <input
+                      type="text"
+                      value={analysisResult.mealName || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, mealName: e.target.value }))}
+                      className="form-input"
+                      placeholder="Enter meal name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Portion Size</label>
+                    <input
+                      type="text"
+                      value={analysisResult.portionSize || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, portionSize: e.target.value }))}
+                      className="form-input"
+                      placeholder="e.g., 1 cup, 200g"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Calories</label>
+                    <input
+                      type="number"
+                      value={analysisResult.calories || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, calories: parseInt(e.target.value) || 0 }))}
+                      className="form-input"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Protein (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={analysisResult.protein || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, protein: parseFloat(e.target.value) || 0 }))}
+                      className="form-input"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Carbs (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={analysisResult.carbs || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, carbs: parseFloat(e.target.value) || 0 }))}
+                      className="form-input"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Fat (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={analysisResult.fat || ''}
+                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, fat: parseFloat(e.target.value) || 0 }))}
+                      className="form-input"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={onCancel}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirm}
+                    className="btn-primary"
+                  >
+                    Add Meal
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Debug Info (Development Only) */}
+          {debugInfo && process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Debug: {debugInfo}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

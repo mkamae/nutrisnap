@@ -12,6 +12,7 @@ const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // UI/UX CLEANUP: Simplified navigation - only core features
   const navItems = [
     {
       id: '/',
@@ -19,19 +20,18 @@ const BottomNav: React.FC = () => {
       icon: HomeIcon,
       color: 'text-blue-600'
     },
-            {
-          id: '/add-meal',
-          label: 'Add Meal',
-          icon: PlusCircleIcon,
-          color: 'text-green-600'
-        },
+    {
+      id: '/add-meal',
+      label: 'Add Meal',
+      icon: PlusCircleIcon,
+      color: 'text-green-600'
+    },
     {
       id: '/workouts',
       label: 'Workouts',
       icon: ChartBarIcon,
       color: 'text-purple-600'
     },
-    
     {
       id: '/profile',
       label: 'Profile',
@@ -55,14 +55,14 @@ const BottomNav: React.FC = () => {
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`flex flex-col items-center py-2 px-3 flex-1 transition-colors ${
+              className={`flex flex-col items-center py-3 px-2 flex-1 transition-all duration-200 ${
                 isActive 
                   ? `${item.color} bg-gray-50 dark:bg-gray-700` 
                   : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
             >
-              <Icon className={`w-6 h-6 ${isActive ? item.color : ''}`} />
-              <span className={`text-xs mt-1 ${isActive ? item.color : ''}`}>
+              <Icon className={`w-6 h-6 mb-1 ${isActive ? item.color : ''}`} />
+              <span className={`text-xs font-medium ${isActive ? item.color : ''}`}>
                 {item.label}
               </span>
             </button>

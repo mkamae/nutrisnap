@@ -6,10 +6,9 @@ interface AuthViewProps {
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
-  const [view, setView] = useState<'landing' | 'login' | 'signup'>('landing');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +18,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
       setIsLoading(true);
       setError(null);
       try {
-        await onLogin(email, password, view === 'signup');
+        await onLogin(email, password, isSignUp);
       } catch (err: any) {
         setError(err.message || 'Authentication failed');
       } finally {
@@ -28,119 +27,109 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     }
   };
 
-  const renderContent = () => {
-    if (view === 'login' || view === 'signup') {
-      return (
-        <div className="w-full max-w-sm p-8 space-y-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg animate-fade-in">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {view === 'login' ? 'Welcome Back!' : 'Create Account'}
-            </h2>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {view === 'login' ? 'Sign in to continue your journey.' : 'Start tracking with NutriSnap today.'}
-            </p>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo and Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <LogoIcon className="w-16 h-16 text-green-600" />
           </div>
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            NutriSnap
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            {isSignUp ? 'Create your account to get started' : 'Welcome back! Sign in to continue'}
+          </p>
+        </div>
+
+        {/* Auth Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email address
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email Address
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                         dark:bg-gray-700 dark:text-white transition-colors"
+                placeholder="Enter your email"
+              />
             </div>
 
+            {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                         dark:bg-gray-700 dark:text-white transition-colors"
+                placeholder="Enter your password"
+              />
             </div>
 
+            {/* Error Display */}
             {error && (
-              <div className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
-                {error}
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                  {error}
+                </p>
               </div>
             )}
             
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Loading...' : (view === 'login' ? 'Sign In' : 'Sign Up')}
-              </button>
-            </div>
-          </form>
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-            {view === 'login' ? "Don't have an account? " : "Already have an account? "}
+            {/* Submit Button */}
             <button
-              onClick={() => setView(view === 'login' ? 'signup' : 'login')}
-              className="font-medium text-green-600 hover:text-green-500"
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 
+                       text-white font-medium py-3 px-4 rounded-lg transition-colors 
+                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 
+                       disabled:cursor-not-allowed"
             >
-              {view === 'login' ? 'Sign Up' : 'Sign In'}
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                </span>
+              ) : (
+                isSignUp ? 'Create Account' : 'Sign In'
+              )}
             </button>
-          </p>
-        </div>
-      );
-    }
-    
-    // Landing view
-    return (
-        <div className="text-center animate-fade-in p-4">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                Snap. Track. <span className="text-green-500">Thrive.</span>
-            </h1>
-            <p className="mt-4 max-w-xl mx-auto text-lg text-gray-600 dark:text-gray-300">
-                Effortlessly understand your meals with a single photo. NutriSnap is your personal AI nutrition coach.
+          </form>
+
+          {/* Toggle between login/signup */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                  setEmail('');
+                  setPassword('');
+                }}
+                className="ml-1 font-medium text-green-600 hover:text-green-500 transition-colors"
+              >
+                {isSignUp ? 'Sign In' : 'Sign Up'}
+              </button>
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row sm:justify-center gap-4">
-                <button
-                    onClick={() => setView('signup')}
-                    className="w-full sm:w-auto px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
-                >
-                    Get Started
-                </button>
-                <button
-                    onClick={() => setView('login')}
-                    className="w-full sm:w-auto px-8 py-3 border border-transparent text-base font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 dark:bg-gray-700 dark:text-green-300 dark:hover:bg-gray-600 transition-colors"
-                >
-                    Sign In
-                </button>
-            </div>
+          </div>
         </div>
-    );
-  };
-
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center items-center p-4">
-        <div className="absolute top-8 flex items-center gap-3">
-            <LogoIcon className="h-10 w-10 text-green-500" />
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">NutriSnap</span>
-        </div>
-        {renderContent()}
+      </div>
     </div>
   );
 };

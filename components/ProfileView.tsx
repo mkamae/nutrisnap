@@ -4,93 +4,79 @@ import { UserProfile } from '../types';
 interface ProfileViewProps {
   profile: UserProfile | null;
   onLogout: () => void;
-  onProfileUpdate: (profile: UserProfile) => void;
+  onProfileUpdate: (profile: UserProfile) => Promise<void>;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileUpdate }) => {
-  const [isEditing, setIsEditing] = useState(!profile); // Start editing if no profile
-  const [editProfile, setEditProfile] = useState<UserProfile>(profile || {
-    name: '',
-    age: 25,
-    gender: 'prefer_not_to_say',
-    weightKg: 70,
-    heightCm: 170,
-    activityLevel: 'moderate',
-    dailyCalorieGoal: 2000,
-    primaryGoal: 'maintain_weight',
-    targetWeightKg: 70,
-    weeklyGoal: 'maintain',
-    fitnessExperience: 'beginner',
-    preferredActivities: []
-  });
+  // UI/UX CLEANUP: Simplified state management - removed onboarding complexity
+  const [isEditing, setIsEditing] = useState(false);
+  const [editProfile, setEditProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Update editProfile when profile prop changes (e.g., after successful update)
+  // Update editProfile when profile prop changes
   useEffect(() => {
-    console.log('ProfileView: profile prop changed:', profile);
     if (profile) {
-      console.log('ProfileView: updating editProfile with profile:', profile);
       setEditProfile(profile);
-      // If we have a profile now, stop editing
       setIsEditing(false);
     }
-    // Don't update editProfile if profile is null - keep the default values
   }, [profile]);
 
+  const handleEdit = () => {
+    if (profile) {
+      setEditProfile(profile);
+      setIsEditing(true);
+    }
+  };
+
   const handleSave = async () => {
+    if (!editProfile) return;
+    
     try {
-      console.log('=== PROFILE VIEW SAVE DEBUG ===');
-      console.log('Saving profile:', editProfile);
-      console.log('Current profile prop:', profile);
+      setIsLoading(true);
       
       // Validate required fields
-      if (!editProfile.name || !editProfile.age || !editProfile.weightKg || !editProfile.heightCm || !editProfile.activityLevel || !editProfile.dailyCalorieGoal) {
+      if (!editProfile.name || !editProfile.age || !editProfile.weightKg || 
+          !editProfile.heightCm || !editProfile.activityLevel || !editProfile.dailyCalorieGoal) {
         throw new Error('Please fill in all required fields');
       }
       
-      // Update the profile using the callback
       await onProfileUpdate(editProfile);
-      console.log('Profile update completed');
-      
-      // Only close editing mode if save was successful
       setIsEditing(false);
-      
-      // Show success message (you can add a toast notification here)
-      console.log('Profile saved successfully!');
       
     } catch (err) {
       console.error('Error saving profile:', err);
-      // Don't close editing mode if there was an error
-      // You can add user-facing error handling here
       alert(`Failed to save profile: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
     if (profile) {
       setEditProfile(profile);
-    } else {
-      // Reset to default values if no profile exists
-      setEditProfile({
-        name: '',
-        age: 25,
-        gender: 'prefer_not_to_say',
-        weightKg: 70,
-        heightCm: 170,
-        activityLevel: 'moderate',
-        dailyCalorieGoal: 2000,
-        primaryGoal: 'maintain_weight',
-        targetWeightKg: 70,
-        weeklyGoal: 'maintain',
-        fitnessExperience: 'beginner',
-        preferredActivities: []
-      });
     }
     setIsEditing(false);
   };
 
   const handleProfileChange = (field: keyof UserProfile, value: any) => {
-    setEditProfile(prev => ({ ...prev, [field]: value }));
+    if (editProfile) {
+      setEditProfile(prev => prev ? { ...prev, [field]: value } : null);
+    }
   };
+
+  // Show loading state if no profile yet
+  if (!profile && !isEditing) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
@@ -103,32 +89,56 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
 
         {/* Profile Overview */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {editProfile.name ? editProfile.name.charAt(0).toUpperCase() : 'U'}
+                {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {profile ? (profile.name || 'User') : 'Set Up Your Profile'}
+                  {profile?.name || 'User'}
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400">
                   {profile ? 'Your personal profile' : 'Create your profile to get started'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              {isEditing ? 'Cancel' : (profile ? 'Edit' : 'Create Profile')}
-            </button>
+            
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              {!isEditing ? (
+                <button
+                  onClick={handleEdit}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Edit Profile
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                  >
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
-          {isEditing ? (
-            // Edit Mode
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Profile Content */}
+          {isEditing && editProfile ? (
+            // Edit Mode - UI/UX CLEANUP: Consistent form styling
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Name Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Name *
@@ -137,11 +147,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                     type="text"
                     value={editProfile.name || ''}
                     onChange={(e) => handleProfileChange('name', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
                     placeholder="Enter your name"
-                    required
                   />
                 </div>
+
+                {/* Age Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Age *
@@ -150,32 +163,35 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                     type="number"
                     value={editProfile.age || ''}
                     onChange={(e) => handleProfileChange('age', parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Age"
-                    min="13"
-                    max="120"
-                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="25"
+                    min="1"
+                    max="150"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Weight Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Weight (kg) *
                   </label>
                   <input
                     type="number"
+                    step="0.1"
                     value={editProfile.weightKg || ''}
                     onChange={(e) => handleProfileChange('weightKg', parseFloat(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Weight"
-                    step="0.1"
-                    min="30"
-                    max="300"
-                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="70.0"
+                    min="1"
+                    max="500"
                   />
                 </div>
+
+                {/* Height Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Height (cm) *
@@ -184,26 +200,28 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                     type="number"
                     value={editProfile.heightCm || ''}
                     onChange={(e) => handleProfileChange('heightCm', parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Height"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="170"
                     min="100"
-                    max="250"
-                    required
+                    max="300"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Activity Level Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Activity Level *
                   </label>
                   <select
-                    value={editProfile.activityLevel || 'moderate'}
+                    value={editProfile.activityLevel || ''}
                     onChange={(e) => handleProfileChange('activityLevel', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
                   >
+                    <option value="">Select activity level</option>
                     <option value="sedentary">Sedentary (little or no exercise)</option>
                     <option value="light">Light (light exercise 1-3 days/week)</option>
                     <option value="moderate">Moderate (moderate exercise 3-5 days/week)</option>
@@ -211,6 +229,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                     <option value="very_active">Very Active (very hard exercise, physical job)</option>
                   </select>
                 </div>
+
+                {/* Daily Calorie Goal Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Daily Calorie Goal *
@@ -219,142 +239,54 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                     type="number"
                     value={editProfile.dailyCalorieGoal || ''}
                     onChange={(e) => handleProfileChange('dailyCalorieGoal', parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Calories"
-                    min="1200"
-                    max="5000"
-                    step="50"
-                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                             dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="2000"
+                    min="1000"
+                    max="10000"
                   />
                 </div>
               </div>
-
+            </div>
+          ) : (
+            // View Mode - UI/UX CLEANUP: Clean profile display
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Primary Goal
-                  </label>
-                  <select
-                    value={editProfile.primaryGoal || 'maintain_weight'}
-                    onChange={(e) => handleProfileChange('primaryGoal', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="lose_weight">Lose Weight</option>
-                    <option value="gain_weight">Gain Weight</option>
-                    <option value="maintain_weight">Maintain Weight</option>
-                    <option value="build_muscle">Build Muscle</option>
-                    <option value="improve_fitness">Improve Fitness</option>
-                  </select>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.name || 'Not set'}</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fitness Experience
-                  </label>
-                  <select
-                    value={editProfile.fitnessExperience || 'beginner'}
-                    onChange={(e) => handleProfileChange('fitnessExperience', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="beginner">Beginner (0-6 months)</option>
-                    <option value="intermediate">Intermediate (6 months - 2 years)</option>
-                    <option value="advanced">Advanced (2+ years)</option>
-                  </select>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Age</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.age || 'Not set'}</p>
                 </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={handleSave}
-                  className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Weight</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.weightKg ? `${profile.weightKg} kg` : 'Not set'}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Height</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.heightCm ? `${profile.heightCm} cm` : 'Not set'}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.activityLevel || 'Not set'}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Daily Calorie Goal</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{profile?.dailyCalorieGoal ? `${profile.dailyCalorieGoal} calories` : 'Not set'}</p>
+                </div>
               </div>
             </div>
-                     ) : profile ? (
-             // View Mode - only show if profile exists
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Personal Information</h3>
-                 <div className="space-y-3">
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
-                     <p className="font-medium">{profile.name || 'Not set'}</p>
-                   </div>
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Age</p>
-                     <p className="font-medium">{profile.age || 'Not set'} years</p>
-                   </div>
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Weight</p>
-                     <p className="font-medium">{profile.weightKg || 'Not set'} kg</p>
-                   </div>
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Height</p>
-                     <p className="font-medium">{profile.heightCm || 'Not set'} cm</p>
-                   </div>
-                 </div>
-               </div>
-               
-               <div>
-                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Fitness Goals</h3>
-                 <div className="space-y-3">
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p>
-                     <p className="font-medium capitalize">
-                       {profile.activityLevel ? profile.activityLevel.replace('_', ' ') : 'Not set'}
-                     </p>
-                   </div>
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Primary Goal</p>
-                     <p className="font-medium capitalize">
-                       {profile.primaryGoal ? profile.primaryGoal.replace('_', ' ') : 'Not set'}
-                     </p>
-                   </div>
-                   <div>
-                     <p className="text-sm text-gray-500 dark:text-gray-400">Fitness Experience</p>
-                     <p className="font-medium capitalize">
-                       {profile.fitnessExperience || 'Not set'}
-                     </p>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           ) : (
-             // No profile message
-             <div className="text-center py-8">
-               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                 No profile information available yet.
-               </p>
-               <p className="text-sm text-gray-400">
-                 Fill out the form above to create your profile.
-               </p>
-             </div>
-           )}
+          )}
         </div>
 
-                 {/* Daily Goal Card */}
-         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Calorie Goal</h3>
-           <div className="text-center">
-             <p className="text-4xl font-bold text-green-500">
-               {profile?.dailyCalorieGoal || editProfile.dailyCalorieGoal || 0}
-             </p>
-             <p className="text-lg text-gray-600 dark:text-gray-400">kcal</p>
-           </div>
-         </div>
-
-        {/* Logout Button */}
+        {/* Logout Button - UI/UX CLEANUP: Consistent button styling */}
         <div className="text-center">
           <button
             onClick={onLogout}
-            className="w-full max-w-md py-3 px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors duration-200 font-semibold"
+            className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Sign Out
           </button>

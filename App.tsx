@@ -328,6 +328,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="pb-20">
           <Routes>
+            {/* UI/UX CLEANUP: Simplified routing - only core features */}
             <Route 
               path="/" 
               element={
@@ -353,7 +354,7 @@ function App() {
               path="/profile" 
               element={
                 <ProfileView
-                  profile={userProfile!}
+                  profile={userProfile}
                   onLogout={handleLogout}
                   onProfileUpdate={handleProfileUpdate}
                 />
@@ -370,15 +371,7 @@ function App() {
               } 
             />
             
-            <Route 
-              path="/activity" 
-              element={
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Activity Summary</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Activity tracking coming soon...</p>
-                </div>
-              } 
-            />
+            {/* Catch all route - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
