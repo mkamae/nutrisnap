@@ -42,13 +42,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
       console.log('Saving profile:', editProfile);
       console.log('Current profile prop:', profile);
       
+      // Validate required fields
+      if (!editProfile.name || !editProfile.age || !editProfile.weightKg || !editProfile.heightCm || !editProfile.activityLevel || !editProfile.dailyCalorieGoal) {
+        throw new Error('Please fill in all required fields');
+      }
+      
       // Update the profile using the callback
       await onProfileUpdate(editProfile);
       console.log('Profile update completed');
+      
+      // Only close editing mode if save was successful
       setIsEditing(false);
+      
+      // Show success message (you can add a toast notification here)
+      console.log('Profile saved successfully!');
+      
     } catch (err) {
       console.error('Error saving profile:', err);
       // Don't close editing mode if there was an error
+      // You can add user-facing error handling here
+      alert(`Failed to save profile: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 

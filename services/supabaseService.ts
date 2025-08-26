@@ -83,7 +83,13 @@ export const profileService = {
 
   async upsertProfile(profile: UserProfile, userId: string): Promise<UserProfile> {
     try {
+      console.log('=== UPSERT PROFILE DEBUG ===');
       console.log('upsertProfile called with:', { profile, userId });
+      
+      // Validate required fields
+      if (!profile.name || !profile.age || !profile.weightKg || !profile.heightCm || !profile.activityLevel || !profile.dailyCalorieGoal) {
+        throw new Error('Missing required profile fields');
+      }
       
       // First, test basic Supabase connection
       console.log('Testing Supabase connection...');
@@ -103,17 +109,25 @@ export const profileService = {
         throw new Error(`Supabase connection test failed: ${testError}`);
       }
       
-      // Flatten the profile object when calling Supabase
       // Map app field names to database column names
+      // Use all available fields from the comprehensive database schema
       const profileData = {
         id: profile.id || undefined, // Allow undefined for new profiles
         user_id: userId,
         name: profile.name,
         age: profile.age,
+        gender: profile.gender || 'prefer_not_to_say',
         weight_kg: profile.weightKg,
         height_cm: profile.heightCm,
         activity_level: profile.activityLevel,
-        daily_calorie_goal: profile.dailyCalorieGoal
+        daily_calorie_goal: profile.dailyCalorieGoal,
+        primary_goal: profile.primaryGoal || 'maintain_weight',
+        target_weight_kg: profile.targetWeightKg || 70,
+        weekly_goal: profile.weeklyGoal || 'maintain',
+        body_fat_percentage: profile.bodyFatPercentage || 0,
+        muscle_mass_kg: profile.muscleMassKg || 0,
+        preferred_activities: profile.preferredActivities || [],
+        fitness_experience: profile.fitnessExperience || 'beginner'
       };
 
       console.log('Profile data to insert:', profileData);
@@ -125,16 +139,22 @@ export const profileService = {
 
       console.log('Attempting to upsert profile...');
       
-      // Perform the upsert operation with flattened profile object
+      // Perform the upsert operation - FIXED: removed redundant user_id spread
       const { data, error } = await supabase
         .from('profiles')
-        .upsert([{ user_id: userId, ...profileData }])
+        .upsert(profileData)
         .select()
         .single();
 
       // Log error if it exists
       if (error) {
         console.error('Error upserting profile:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw new Error(`Failed to save profile: ${error.message}`);
       }
 
@@ -147,10 +167,15 @@ export const profileService = {
         .eq('user_id', userId)
         .single();
       
-      console.log('Loaded profile:', verifyData, verifyError);
+      if (verifyError) {
+        console.error('Error verifying profile save:', verifyError);
+        throw new Error(`Profile saved but verification failed: ${verifyError.message}`);
+      }
+      
+      console.log('Profile verification successful:', verifyData);
 
-      // Map back to app format - only include fields that exist in the database
-      return {
+      // Map back to app format - use actual database values
+      const mappedProfile = {
         id: data.id,
         user_id: data.user_id,
         name: data.name,
@@ -159,17 +184,21 @@ export const profileService = {
         heightCm: data.height_cm,
         activityLevel: data.activity_level,
         dailyCalorieGoal: data.daily_calorie_goal,
-        // Set default values for fields not in the current database schema
-        gender: 'prefer_not_to_say',
-        primaryGoal: 'maintain_weight',
-        targetWeightKg: 70,
-        weeklyGoal: 'maintain',
-        bodyFatPercentage: 0,
-        muscleMassKg: 0,
-        preferredActivities: [],
-        fitnessExperience: 'beginner',
+        // Use actual database values for all fields
+        gender: data.gender || 'prefer_not_to_say',
+        primaryGoal: data.primary_goal || 'maintain_weight',
+        targetWeightKg: data.target_weight_kg || 70,
+        weeklyGoal: data.weekly_goal || 'maintain',
+        bodyFatPercentage: data.body_fat_percentage || 0,
+        muscleMassKg: data.muscle_mass_kg || 0,
+        preferredActivities: data.preferred_activities || [],
+        fitnessExperience: data.fitness_experience || 'beginner',
         updated_at: data.updated_at
       };
+
+      console.log('Mapped profile for return:', mappedProfile);
+      return mappedProfile;
+      
     } catch (error) {
       console.error('Error in upsertProfile:', error);
       throw error;

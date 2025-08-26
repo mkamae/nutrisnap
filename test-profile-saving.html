@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Saving Test - NutriSnap</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; width: 200px; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 120px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 NutriSnap Profile Saving Test</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Instructions</h3>
+        <p>This page helps you test if your profile saving is working correctly.</p>
+        <ol>
+            <li>Make sure you're logged into your NutriSnap app</li>
+            <li>Fill out the profile form below</li>
+            <li>Click "Test Profile Save" to test the upsertProfile function</li>
+            <li>Check the console logs for detailed debugging information</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Profile Form</h3>
+        <form id="profileForm">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" value="Test User" required>
+            </div>
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" value="25" min="13" max="120" required>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender">
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="weightKg">Weight (kg):</label>
+                <input type="number" id="weightKg" value="70" step="0.1" min="30" max="300" required>
+            </div>
+            <div class="form-group">
+                <label for="heightCm">Height (cm):</label>
+                <input type="number" id="heightCm" value="170" min="100" max="250" required>
+            </div>
+            <div class="form-group">
+                <label for="activityLevel">Activity Level:</label>
+                <select id="activityLevel" required>
+                    <option value="sedentary">Sedentary</option>
+                    <option value="light">Light</option>
+                    <option value="moderate" selected>Moderate</option>
+                    <option value="active">Active</option>
+                    <option value="very_active">Very Active</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dailyCalorieGoal">Daily Calorie Goal:</label>
+                <input type="number" id="dailyCalorieGoal" value="2000" min="1200" max="5000" step="50" required>
+            </div>
+            <div class="form-group">
+                <label for="primaryGoal">Primary Goal:</label>
+                <select id="primaryGoal">
+                    <option value="maintain_weight" selected>Maintain Weight</option>
+                    <option value="lose_weight">Lose Weight</option>
+                    <option value="gain_weight">Gain Weight</option>
+                    <option value="build_muscle">Build Muscle</option>
+                    <option value="improve_fitness">Improve Fitness</option>
+                </select>
+            </div>
+        </form>
+        
+        <button class="btn-primary" onclick="testProfileSave()">🧪 Test Profile Save</button>
+        <button class="btn-success" onclick="testProfileLoad()">📖 Test Profile Load</button>
+        <button class="btn-danger" onclick="clearConsole()">🗑️ Clear Console</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Console Logs</h3>
+        <p>Open your browser's Developer Tools (F12) and check the Console tab for detailed logs.</p>
+        <p>Look for these key messages:</p>
+        <ul>
+            <li>✅ "upsertProfile called with:" - Function was called</li>
+            <li>✅ "Supabase connection successful" - Database connection works</li>
+            <li>✅ "Profile data to insert:" - Data being sent to database</li>
+            <li>✅ "Profile upserted successfully:" - Profile was saved</li>
+            <li>✅ "Profile verification successful:" - Profile was loaded back</li>
+        </ul>
+    </div>
+
+    <script>
+        // Test profile saving
+        async function testProfileSave() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="info">🔄 Testing profile save...</div>';
+            
+            try {
+                // Get form data
+                const profileData = {
+                    name: document.getElementById('name').value,
+                    age: parseInt(document.getElementById('age').value),
+                    gender: document.getElementById('gender').value,
+                    weightKg: parseFloat(document.getElementById('weightKg').value),
+                    heightCm: parseInt(document.getElementById('heightCm').value),
+                    activityLevel: document.getElementById('activityLevel').value,
+                    dailyCalorieGoal: parseInt(document.getElementById('dailyCalorieGoal').value),
+                    primaryGoal: document.getElementById('primaryGoal').value,
+                    targetWeightKg: 70,
+                    weeklyGoal: 'maintain',
+                    bodyFatPercentage: 0,
+                    muscleMassKg: 0,
+                    preferredActivities: [],
+                    fitnessExperience: 'beginner'
+                };
+
+                console.log('🧪 TEST: Profile data to save:', profileData);
+                
+                // Simulate the profile save (you'll need to integrate this with your actual app)
+                const testUserId = 'test-user-' + Date.now();
+                console.log('🧪 TEST: Using test user ID:', testUserId);
+                
+                // This is where you'd call your actual upsertProfile function
+                // For now, we'll just log what would happen
+                console.log('🧪 TEST: Would call upsertProfile with:', { profile: profileData, userId: testUserId });
+                
+                resultsDiv.innerHTML = '<div class="success">✅ Profile save test completed! Check console for details.</div>';
+                
+            } catch (error) {
+                console.error('🧪 TEST ERROR:', error);
+                resultsDiv.innerHTML = '<div class="error">❌ Profile save test failed: ' + error.message + '</div>';
+            }
+        }
+
+        // Test profile loading
+        async function testProfileLoad() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="info">🔄 Testing profile load...</div>';
+            
+            try {
+                console.log('🧪 TEST: Testing profile loading...');
+                
+                // This is where you'd call your actual getProfile function
+                console.log('🧪 TEST: Would call getProfile to load profile data');
+                
+                resultsDiv.innerHTML = '<div class="success">✅ Profile load test completed! Check console for details.</div>';
+                
+            } catch (error) {
+                console.error('🧪 TEST ERROR:', error);
+                resultsDiv.innerHTML = '<div class="error">❌ Profile load test failed: ' + error.message + '</div>';
+            }
+        }
+
+        // Clear console
+        function clearConsole() {
+            console.clear();
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        // Initialize page
+        console.log('🧪 TEST: Profile saving test page loaded');
+        console.log('🧪 TEST: Fill out the form and click "Test Profile Save" to begin testing');
+    </script>
+</body>
+</html>

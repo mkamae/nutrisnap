@@ -179,14 +179,20 @@ function App() {
   };
 
   const handleProfileUpdate = async (updatedProfile: UserProfile) => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      console.error('No current user ID found for profile update');
+      return;
+    }
 
     try {
+      console.log('=== PROFILE UPDATE DEBUG ===');
       console.log('Updating profile:', updatedProfile);
+      console.log('Current user ID:', currentUserId);
+      
       const savedProfile = await profileService.upsertProfile(updatedProfile, currentUserId);
       console.log('Profile saved to DB:', savedProfile);
       
-      // Force a state update with the new profile
+      // Update the state with the saved profile
       setUserProfile(savedProfile);
       console.log('User profile state updated:', savedProfile);
       
@@ -196,11 +202,12 @@ function App() {
         console.log('Profile saved to localStorage');
       }
       
-      // Force a re-render by updating a timestamp
-      setUserProfile(prev => ({ ...savedProfile, updated_at: new Date().toISOString() }));
+      // Verify the state was updated correctly
+      console.log('Profile update completed successfully');
       
     } catch (error) {
       console.error('Error updating profile:', error);
+      // Re-throw the error so the UI can handle it
       throw error;
     }
   };
