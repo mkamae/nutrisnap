@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { UserProfile, WorkoutRoutine, WorkoutExercise } from '../types';
+import { UserProfile } from '../types';
 
 interface OnboardingViewProps {
-  onComplete: (profile: UserProfile, workoutRoutine?: WorkoutRoutine) => void;
+  onComplete: (profile: UserProfile) => void;
   onSkip: () => void;
 }
 
@@ -23,65 +23,16 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
     preferredActivities: []
   });
 
-  const [workoutRoutine, setWorkoutRoutine] = useState<Partial<WorkoutRoutine>>({
-    name: 'My Workout Routine',
-    description: '',
-    frequency: '3x_week',
-    customFrequencyDays: 3
-  });
 
-  const [exercises, setExercises] = useState<Partial<WorkoutExercise>[]>([
-    {
-      exerciseName: 'Push-ups',
-      sets: 3,
-      reps: 10,
-      durationMinutes: 5,
-      restSeconds: 60,
-      orderIndex: 1
-    },
-    {
-      exerciseName: 'Squats',
-      sets: 3,
-      reps: 15,
-      durationMinutes: 5,
-      restSeconds: 60,
-      orderIndex: 2
-    }
-  ]);
-
-  const [showWorkoutSetup, setShowWorkoutSetup] = useState(false);
 
   const handleProfileChange = (field: keyof UserProfile, value: any) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleWorkoutChange = (field: keyof WorkoutRoutine, value: any) => {
-    setWorkoutRoutine(prev => ({ ...prev, [field]: value }));
-  };
 
-  const handleExerciseChange = (index: number, field: keyof WorkoutExercise, value: any) => {
-    setExercises(prev => prev.map((ex, i) => 
-      i === index ? { ...ex, [field]: value } : ex
-    ));
-  };
-
-  const addExercise = () => {
-    setExercises(prev => [...prev, {
-      exerciseName: '',
-      sets: 3,
-      reps: 10,
-      durationMinutes: 5,
-      restSeconds: 60,
-      orderIndex: prev.length + 1
-    }]);
-  };
-
-  const removeExercise = (index: number) => {
-    setExercises(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -94,9 +45,7 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
 
   const handleComplete = () => {
     const completeProfile = profile as UserProfile;
-    const completeWorkoutRoutine = showWorkoutSetup ? workoutRoutine as WorkoutRoutine : undefined;
-    
-    onComplete(completeProfile, completeWorkoutRoutine);
+    onComplete(completeProfile);
   };
 
   const renderStep1 = () => (
@@ -317,160 +266,7 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
     </div>
   );
 
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Workout Routine (Optional)</h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">Set up a workout routine to track your fitness progress</p>
-      </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            id="setup-workout"
-            checked={showWorkoutSetup}
-            onChange={(e) => setShowWorkoutSetup(e.target.checked)}
-            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-          />
-          <label htmlFor="setup-workout" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            I want to set up a workout routine
-          </label>
-        </div>
-
-        {showWorkoutSetup && (
-          <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Routine Name
-              </label>
-              <input
-                type="text"
-                value={workoutRoutine.name || ''}
-                onChange={(e) => handleWorkoutChange('name', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="e.g., Full Body Workout"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description
-              </label>
-              <textarea
-                value={workoutRoutine.description || ''}
-                onChange={(e) => handleWorkoutChange('description', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                rows={3}
-                placeholder="Describe your workout routine..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Frequency
-              </label>
-              <select
-                value={workoutRoutine.frequency || '3x_week'}
-                onChange={(e) => handleWorkoutChange('frequency', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="daily">Daily</option>
-                <option value="3x_week">3 times per week</option>
-                <option value="4x_week">4 times per week</option>
-                <option value="5x_week">5 times per week</option>
-                <option value="6x_week">6 times per week</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            {workoutRoutine.frequency === 'custom' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Days per week
-                </label>
-                <input
-                  type="number"
-                  value={workoutRoutine.customFrequencyDays || 3}
-                  onChange={(e) => handleWorkoutChange('customFrequencyDays', parseInt(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  min="1"
-                  max="7"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Exercises
-              </label>
-              <div className="space-y-3">
-                {exercises.map((exercise, index) => (
-                  <div key={index} className="p-3 border border-gray-300 rounded-lg">
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={exercise.exerciseName || ''}
-                        onChange={(e) => handleExerciseChange(index, 'exerciseName', e.target.value)}
-                        className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Exercise name"
-                      />
-                      <button
-                        onClick={() => removeExercise(index)}
-                        className="px-3 py-2 text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      <input
-                        type="number"
-                        value={exercise.sets || ''}
-                        onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
-                        className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Sets"
-                        min="1"
-                      />
-                      <input
-                        type="number"
-                        value={exercise.reps || ''}
-                        onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
-                        className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Reps"
-                        min="1"
-                      />
-                      <input
-                        type="number"
-                        value={exercise.durationMinutes || ''}
-                        onChange={(e) => handleExerciseChange(index, 'durationMinutes', parseInt(e.target.value))}
-                        className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Min"
-                        min="1"
-                      />
-                      <input
-                        type="number"
-                        value={exercise.restSeconds || ''}
-                        onChange={(e) => handleExerciseChange(index, 'restSeconds', parseInt(e.target.value))}
-                        className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Rest (s)"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                ))}
-                <button
-                  onClick={addExercise}
-                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors"
-                >
-                  + Add Exercise
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -478,8 +274,6 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
         return renderStep1();
       case 2:
         return renderStep2();
-      case 3:
-        return renderStep3();
       default:
         return renderStep1();
     }
@@ -491,8 +285,6 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
         return profile.name && profile.age && profile.weightKg && profile.heightCm;
       case 2:
         return profile.primaryGoal && profile.activityLevel && profile.dailyCalorieGoal;
-      case 3:
-        return true; // Step 3 is optional
       default:
         return false;
     }
@@ -504,15 +296,15 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Step {currentStep} of 3</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Step {currentStep} of 2</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {Math.round((currentStep / 3) * 100)}% Complete
+              {Math.round((currentStep / 2) * 100)}% Complete
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className="bg-green-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / 3) * 100}%` }}
+              style={{ width: `${(currentStep / 2) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -531,7 +323,7 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
           </button>
 
           <div className="flex space-x-3">
-            {currentStep < 3 ? (
+            {currentStep < 2 ? (
               <button
                 onClick={handleNext}
                 disabled={!canProceed()}
@@ -540,21 +332,13 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSkip }) =
                 Next
               </button>
             ) : (
-              <>
-                <button
-                  onClick={onSkip}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Skip for Now
-                </button>
-                <button
-                  onClick={handleComplete}
-                  disabled={!canProceed()}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Complete Setup
-                </button>
-              </>
+              <button
+                onClick={handleComplete}
+                disabled={!canProceed()}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Complete Setup
+              </button>
             )}
           </div>
         </div>

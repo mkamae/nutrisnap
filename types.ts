@@ -43,32 +43,7 @@ export interface UserProfile {
   updated_at?: string; // ISO string
 }
 
-export interface WorkoutRoutine {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-  frequency: 'daily' | '3x_week' | '4x_week' | '5x_week' | '6x_week' | 'custom';
-  customFrequencyDays?: number;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface WorkoutExercise {
-  id: string;
-  routineId: string;
-  exerciseName: string;
-  sets: number;
-  reps: number;
-  weightKg?: number;
-  durationMinutes?: number;
-  restSeconds?: number;
-  notes?: string;
-  orderIndex: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface Workout {
   id: string;
