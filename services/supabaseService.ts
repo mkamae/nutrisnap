@@ -10,6 +10,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Test connection function
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('Testing Supabase connection...');
+    console.log('URL:', supabaseUrl);
+    console.log('Key length:', supabaseAnonKey?.length || 0);
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.error('Connection test failed:', error);
+      return { success: false, error: error.message };
+    }
+    
+    console.log('Connection test successful');
+    return { success: true, data };
+  } catch (error) {
+    console.error('Connection test error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Profile Service
 export const profileService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
@@ -59,6 +84,24 @@ export const profileService = {
     try {
       console.log('upsertProfile called with:', { profile, userId });
       
+      // First, test basic Supabase connection
+      console.log('Testing Supabase connection...');
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('profiles')
+          .select('id')
+          .limit(1);
+        
+        if (testError) {
+          console.error('Supabase connection test failed:', testError);
+          throw new Error(`Supabase connection failed: ${testError.message}`);
+        }
+        console.log('Supabase connection successful');
+      } catch (testError) {
+        console.error('Supabase connection test error:', testError);
+        throw new Error(`Supabase connection test failed: ${testError}`);
+      }
+      
       // Map app field names to database column names
       const profileData = {
         id: profile.id || undefined, // Allow undefined for new profiles
@@ -89,9 +132,9 @@ export const profileService = {
 
       console.log('Attempting to upsert profile...');
       
-      // Add timeout to prevent hanging
+      // Try the upsert operation with a shorter timeout
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database operation timed out after 10 seconds')), 10000);
+        setTimeout(() => reject(new Error('Database operation timed out after 5 seconds')), 5000);
       });
       
       const upsertPromise = supabase
@@ -131,7 +174,15 @@ export const profileService = {
       };
     } catch (error) {
       console.error('Error in upsertProfile:', error);
-      throw error;
+      
+      // Provide more specific error information
+      if (error.message.includes('timed out')) {
+        throw new Error('Database connection is slow or unresponsive. Please check your internet connection and try again.');
+      } else if (error.message.includes('Supabase connection failed')) {
+        throw new Error('Unable to connect to the database. Please check your Supabase configuration.');
+      } else {
+        throw error;
+      }
     }
   }
 };
