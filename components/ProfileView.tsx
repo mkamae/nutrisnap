@@ -239,68 +239,78 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onLogout, onProfileU
                 </button>
               </div>
             </div>
-          ) : (
-            // View Mode
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Personal Information</h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
-                    <p className="font-medium">{profile.name || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Age</p>
-                    <p className="font-medium">{profile.age || 'Not set'} years</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Weight</p>
-                    <p className="font-medium">{profile.weightKg || 'Not set'} kg</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Height</p>
-                    <p className="font-medium">{profile.heightCm || 'Not set'} cm</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Fitness Goals</h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p>
-                    <p className="font-medium capitalize">
-                      {profile.activityLevel ? profile.activityLevel.replace('_', ' ') : 'Not set'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Primary Goal</p>
-                    <p className="font-medium capitalize">
-                      {profile.primaryGoal ? profile.primaryGoal.replace('_', ' ') : 'Not set'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Fitness Experience</p>
-                    <p className="font-medium capitalize">
-                      {profile.fitnessExperience || 'Not set'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                     ) : profile ? (
+             // View Mode - only show if profile exists
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div>
+                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Personal Information</h3>
+                 <div className="space-y-3">
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
+                     <p className="font-medium">{profile.name || 'Not set'}</p>
+                   </div>
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Age</p>
+                     <p className="font-medium">{profile.age || 'Not set'} years</p>
+                   </div>
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Weight</p>
+                     <p className="font-medium">{profile.weightKg || 'Not set'} kg</p>
+                   </div>
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Height</p>
+                     <p className="font-medium">{profile.heightCm || 'Not set'} cm</p>
+                   </div>
+                 </div>
+               </div>
+               
+               <div>
+                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Fitness Goals</h3>
+                 <div className="space-y-3">
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p>
+                     <p className="font-medium capitalize">
+                       {profile.activityLevel ? profile.activityLevel.replace('_', ' ') : 'Not set'}
+                     </p>
+                   </div>
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Primary Goal</p>
+                     <p className="font-medium capitalize">
+                       {profile.primaryGoal ? profile.primaryGoal.replace('_', ' ') : 'Not set'}
+                     </p>
+                   </div>
+                   <div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">Fitness Experience</p>
+                     <p className="font-medium capitalize">
+                       {profile.fitnessExperience || 'Not set'}
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ) : (
+             // No profile message
+             <div className="text-center py-8">
+               <p className="text-gray-500 dark:text-gray-400 mb-4">
+                 No profile information available yet.
+               </p>
+               <p className="text-sm text-gray-400">
+                 Fill out the form above to create your profile.
+               </p>
+             </div>
+           )}
         </div>
 
-        {/* Daily Goal Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Calorie Goal</h3>
-          <div className="text-center">
-            <p className="text-4xl font-bold text-green-500">
-              {profile.dailyCalorieGoal || 0}
-            </p>
-            <p className="text-lg text-gray-600 dark:text-gray-400">kcal</p>
-          </div>
-        </div>
+                 {/* Daily Goal Card */}
+         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Calorie Goal</h3>
+           <div className="text-center">
+             <p className="text-4xl font-bold text-green-500">
+               {profile?.dailyCalorieGoal || editProfile.dailyCalorieGoal || 0}
+             </p>
+             <p className="text-lg text-gray-600 dark:text-gray-400">kcal</p>
+           </div>
+         </div>
 
         {/* Logout Button */}
         <div className="text-center">
