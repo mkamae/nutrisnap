@@ -1,5 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import { MealEntry, Workout } from '../types';
+import { 
+  MealEntry, 
+  FoodItem, 
+  DemoWorkout, 
+  Exercise, 
+  Workout, 
+  WorkoutSession, 
+  ExerciseLog 
+} from '../types';
 
 // Access environment variables directly
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -24,7 +32,6 @@ export const testSupabaseConnection = async () => {
   try {
     console.log('🧪 Testing Supabase connection...');
     
-    // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Connection test timed out after 10 seconds')), 10000);
     });
@@ -50,63 +57,40 @@ export const testSupabaseConnection = async () => {
   }
 };
 
-// Meal Service
+// =====================================================
+// MEAL SERVICE
+// =====================================================
+
 export const mealService = {
-  async addMeal(meal: Omit<MealEntry, 'id' | 'created_at'>, userId: string): Promise<MealEntry> {
+  async createMeal(mealData: Omit<MealEntry, 'id' | 'created_at'>, userId: string): Promise<MealEntry> {
     try {
-      console.log('🍽️ mealService.addMeal called with:', { meal, userId });
-      
-      const insertData = {
-        mealname: meal.mealName,       // lowercase DB column
-        portionsize: meal.portionSize, // lowercase DB column
-        imageurl: meal.imageUrl,       // lowercase DB column
-        calories: meal.calories,
-        protein: meal.protein,
-        carbs: meal.carbs,
-        fat: meal.fat,
-        date: meal.date,
-        user_id: userId,
-      };
-      
-      console.log('📊 Insert data:', insertData);
+      console.log('🍽️ Creating meal:', { mealData, userId });
       
       const { data, error } = await supabase
         .from('meals')
-        .insert([insertData])
+        .insert({
+          user_id: userId,
+          mealname: mealData.mealname,
+          portionsize: mealData.portionsize,
+          imageurl: mealData.imageurl,
+          calories: mealData.calories,
+          protein: mealData.protein,
+          carbs: mealData.carbs,
+          fat: mealData.fat,
+          date: mealData.date
+        })
         .select()
         .single();
 
       if (error) {
-        console.error('❌ Database error adding meal:', error);
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw new Error(`Failed to add meal: ${error.message} (Code: ${error.code})`);
+        console.error('❌ Error creating meal:', error);
+        throw new Error(`Failed to save meal: ${error.message}`);
       }
-      
-      console.log('✅ Meal added successfully:', data);
 
-      // Map database response back to app format
-      const mappedMeal: MealEntry = {
-        id: data.id,
-        mealName: data.mealname,
-        portionSize: data.portionsize,
-        imageUrl: data.imageurl,
-        calories: data.calories,
-        protein: data.protein,
-        carbs: data.carbs,
-        fat: data.fat,
-        date: data.date,
-        user_id: data.user_id,
-        created_at: data.created_at
-      };
-
-      return mappedMeal;
+      console.log('✅ Meal created successfully:', data);
+      return data;
     } catch (error) {
-      console.error('Error in addMeal:', error);
+      console.error('Error in createMeal:', error);
       throw error;
     }
   },
@@ -121,136 +105,258 @@ export const mealService = {
 
       if (error) {
         console.error('Error fetching meals:', error);
-        throw new Error('Failed to fetch meals');
+        throw new Error(`Failed to fetch meals: ${error.message}`);
       }
 
-      // Map database column names to app field names
-      return data.map(item => ({
-        id: item.id,
-        mealName: item.mealname,
-        portionSize: item.portionsize,
-        imageUrl: item.imageurl,
-        calories: item.calories,
-        protein: item.protein,
-        carbs: item.carbs,
-        fat: item.fat,
-        date: item.date,
-        user_id: item.user_id,
-        created_at: item.created_at
-      }));
+      return data;
     } catch (error) {
       console.error('Error in getMeals:', error);
+      throw error;
+    }
+  },
+
+  async getMealsByDateRange(userId: string, startDate: string, endDate: string): Promise<MealEntry[]> {
+    try {
+      const { data, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching meals by date range:', error);
+        throw new Error(`Failed to fetch meals: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getMealsByDateRange:', error);
+      throw error;
+    }
+  },
+
+  async deleteMeal(mealId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', mealId);
+
+      if (error) {
+        console.error('Error deleting meal:', error);
+        throw new Error(`Failed to delete meal: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error in deleteMeal:', error);
       throw error;
     }
   }
 };
 
-// Workout Service
+// =====================================================
+// FOOD SERVICE
+// =====================================================
+
+export const foodService = {
+  async getFoodItems(): Promise<FoodItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('food_items')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching food items:', error);
+        throw new Error(`Failed to fetch food items: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getFoodItems:', error);
+      throw error;
+    }
+  },
+
+  async searchFoodItems(query: string): Promise<FoodItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('food_items')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .order('name')
+        .limit(10);
+
+      if (error) {
+        console.error('Error searching food items:', error);
+        throw new Error(`Failed to search food items: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in searchFoodItems:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// DEMO WORKOUT SERVICE
+// =====================================================
+
+export const demoWorkoutService = {
+  async getDemoWorkouts(): Promise<DemoWorkout[]> {
+    try {
+      const { data, error } = await supabase
+        .from('demo_workouts')
+        .select('*')
+        .order('category', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching demo workouts:', error);
+        throw new Error(`Failed to fetch demo workouts: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getDemoWorkouts:', error);
+      throw error;
+    }
+  },
+
+  async getDemoWorkoutsByCategory(category: string): Promise<DemoWorkout[]> {
+    try {
+      const { data, error } = await supabase
+        .from('demo_workouts')
+        .select('*')
+        .eq('category', category)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching demo workouts by category:', error);
+        throw new Error(`Failed to fetch demo workouts: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getDemoWorkoutsByCategory:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// EXERCISE SERVICE
+// =====================================================
+
+export const exerciseService = {
+  async getExercises(): Promise<Exercise[]> {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .order('category', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching exercises:', error);
+        throw new Error(`Failed to fetch exercises: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getExercises:', error);
+      throw error;
+    }
+  },
+
+  async getExercisesByCategory(category: string): Promise<Exercise[]> {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('category', category)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching exercises by category:', error);
+        throw new Error(`Failed to fetch exercises: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getExercisesByCategory:', error);
+      throw error;
+    }
+  },
+
+  async getExerciseById(id: string): Promise<Exercise | null> {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching exercise by ID:', error);
+        throw new Error(`Failed to fetch exercise: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getExerciseById:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// WORKOUT SERVICE
+// =====================================================
+
 export const workoutService = {
-  async createWorkout(workout: Omit<Workout, 'id' | 'created_at'>, userId: string): Promise<Workout> {
+  async createWorkout(workoutData: Omit<Workout, 'id' | 'created_at'>, userId: string): Promise<Workout> {
     try {
       const { data, error } = await supabase
         .from('workouts')
-        .insert([
-          {
-            user_id: userId,
-            workout_type: workout.workout_type,
-            duration_minutes: workout.duration_minutes,
-            calories_burned: workout.calories_burned,
-            workout_date: workout.workout_date,
-            notes: workout.notes
-          }
-        ])
+        .insert({
+          user_id: userId,
+          name: workoutData.name,
+          description: workoutData.description,
+          exercises: workoutData.exercises
+        })
         .select()
         .single();
 
       if (error) {
         console.error('Error creating workout:', error);
-        throw new Error('Failed to create workout');
+        throw new Error(`Failed to create workout: ${error.message}`);
       }
 
-      return {
-        id: data.id,
-        user_id: data.user_id,
-        workout_type: data.workout_type,
-        duration_minutes: data.duration_minutes,
-        calories_burned: data.calories_burned,
-        workout_date: data.workout_date,
-        notes: data.notes,
-        created_at: data.created_at
-      };
+      return data;
     } catch (error) {
       console.error('Error in createWorkout:', error);
       throw error;
     }
   },
 
-  async getWorkouts(userId: string, days: number = 30): Promise<Workout[]> {
+  async getWorkouts(userId: string): Promise<Workout[]> {
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
       const { data, error } = await supabase
         .from('workouts')
         .select('*')
         .eq('user_id', userId)
-        .gte('workout_date', startDate.toISOString().split('T')[0])
-        .order('workout_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching workouts:', error);
-        throw new Error('Failed to fetch workouts');
+        throw new Error(`Failed to fetch workouts: ${error.message}`);
       }
 
-      return data.map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        workout_type: item.workout_type,
-        duration_minutes: item.duration_minutes,
-        calories_burned: item.calories_burned,
-        workout_date: item.workout_date,
-        notes: item.notes,
-        created_at: item.created_at
-      }));
+      return data;
     } catch (error) {
       console.error('Error in getWorkouts:', error);
-      throw error;
-    }
-  },
-
-  async updateWorkout(workout: Workout, userId: string): Promise<Workout> {
-    try {
-      const { data, error } = await supabase
-        .from('workouts')
-        .update({
-          workout_type: workout.workout_type,
-          duration_minutes: workout.duration_minutes,
-          calories_burned: workout.calories_burned,
-          workout_date: workout.workout_date,
-          notes: workout.notes
-        })
-        .eq('id', workout.id)
-        .eq('user_id', userId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating workout:', error);
-        throw new Error('Failed to update workout');
-      }
-
-      return {
-        id: data.id,
-        user_id: data.user_id,
-        workout_type: data.workout_type,
-        duration_minutes: data.duration_minutes,
-        calories_burned: data.calories_burned,
-        workout_date: data.workout_date,
-        notes: data.notes,
-        created_at: data.created_at
-      };
-    } catch (error) {
-      console.error('Error in updateWorkout:', error);
       throw error;
     }
   },
@@ -265,10 +371,153 @@ export const workoutService = {
 
       if (error) {
         console.error('Error deleting workout:', error);
-        throw new Error('Failed to delete workout');
+        throw new Error(`Failed to delete workout: ${error.message}`);
       }
     } catch (error) {
       console.error('Error in deleteWorkout:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// WORKOUT SESSION SERVICE
+// =====================================================
+
+export const workoutSessionService = {
+  async startWorkoutSession(
+    userId: string, 
+    workoutId?: string, 
+    demoWorkoutId?: string
+  ): Promise<WorkoutSession> {
+    try {
+      const { data, error } = await supabase
+        .from('workout_sessions')
+        .insert({
+          user_id: userId,
+          workout_id: workoutId,
+          demo_workout_id: demoWorkoutId,
+          started_at: new Date().toISOString(),
+          calories_burned: 0
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error starting workout session:', error);
+        throw new Error(`Failed to start workout session: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in startWorkoutSession:', error);
+      throw error;
+    }
+  },
+
+  async completeWorkoutSession(
+    sessionId: string, 
+    totalDurationSeconds: number, 
+    caloriesBurned: number,
+    notes?: string
+  ): Promise<WorkoutSession> {
+    try {
+      const { data, error } = await supabase
+        .from('workout_sessions')
+        .update({
+          completed_at: new Date().toISOString(),
+          total_duration_seconds: totalDurationSeconds,
+          calories_burned: caloriesBurned,
+          notes: notes
+        })
+        .eq('id', sessionId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error completing workout session:', error);
+        throw new Error(`Failed to complete workout session: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in completeWorkoutSession:', error);
+      throw error;
+    }
+  },
+
+  async getWorkoutSessions(userId: string, limit: number = 10): Promise<WorkoutSession[]> {
+    try {
+      const { data, error } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching workout sessions:', error);
+        throw new Error(`Failed to fetch workout sessions: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getWorkoutSessions:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// EXERCISE LOG SERVICE
+// =====================================================
+
+export const exerciseLogService = {
+  async logExercise(logData: Omit<ExerciseLog, 'id' | 'created_at'>): Promise<ExerciseLog> {
+    try {
+      const { data, error } = await supabase
+        .from('exercise_logs')
+        .insert({
+          session_id: logData.session_id,
+          exercise_id: logData.exercise_id,
+          demo_workout_id: logData.demo_workout_id,
+          sets_completed: logData.sets_completed,
+          reps_completed: logData.reps_completed,
+          duration_seconds: logData.duration_seconds,
+          weight_used: logData.weight_used,
+          notes: logData.notes
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error logging exercise:', error);
+        throw new Error(`Failed to log exercise: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in logExercise:', error);
+      throw error;
+    }
+  },
+
+  async getExerciseLogs(sessionId: string): Promise<ExerciseLog[]> {
+    try {
+      const { data, error } = await supabase
+        .from('exercise_logs')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching exercise logs:', error);
+        throw new Error(`Failed to fetch exercise logs: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getExerciseLogs:', error);
       throw error;
     }
   }

@@ -1,20 +1,107 @@
+// =====================================================
+// MEAL ANALYSIS TYPES
+// =====================================================
 
 export interface Nutrients {
-  mealName: string;
+  mealname: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  portionSize: string;
+  portionsize?: string;
 }
 
-export interface MealEntry extends Nutrients {
+export interface MealEntry {
   id: string;
-  date: string; // ISO string
-  imageUrl: string; // data URL
-  user_id?: string; // Supabase user ID
-  created_at?: string; // ISO string
+  user_id: string;
+  mealname: string;
+  portionsize?: string;
+  imageurl?: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  date: string;
+  created_at: string;
 }
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  category?: string;
+  created_at: string;
+}
+
+// =====================================================
+// GUIDED WORKOUTS TYPES
+// =====================================================
+
+export interface DemoWorkout {
+  id: string;
+  name: string;
+  category: string;
+  reps?: number;
+  sets?: number;
+  duration_seconds?: number;
+  instructions?: string;
+  muscle_groups?: string[];
+  created_at: string;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  duration_seconds?: number;
+  reps?: number;
+  image_url?: string;
+  instructions?: string;
+  muscle_groups?: string[];
+  gif_url?: string;
+  created_at: string;
+}
+
+export interface Workout {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  exercises: any; // jsonb array of exercise IDs with sets/reps
+  created_at: string;
+}
+
+export interface WorkoutSession {
+  id: string;
+  user_id: string;
+  workout_id?: string;
+  demo_workout_id?: string;
+  started_at: string;
+  completed_at?: string;
+  total_duration_seconds?: number;
+  calories_burned: number;
+  notes?: string;
+}
+
+export interface ExerciseLog {
+  id: string;
+  session_id: string;
+  exercise_id?: string;
+  demo_workout_id?: string;
+  sets_completed: number;
+  reps_completed: number;
+  duration_seconds: number;
+  weight_used?: number;
+  notes?: string;
+  created_at: string;
+}
+
+// =====================================================
+// USER PROFILE TYPES
+// =====================================================
 
 export interface UserProfile {
   id?: string;
@@ -43,30 +130,9 @@ export interface UserProfile {
   updated_at?: string; // ISO string
 }
 
-
-
-export interface Workout {
-  id: string;
-  user_id: string;
-  workout_type: string;
-  duration_minutes: number;
-  calories_burned?: number;
-  workout_date: string; // ISO date string
-  notes?: string;
-  created_at: string;
-}
-
-export interface ExerciseLog {
-  id: string;
-  sessionId: string;
-  exerciseName: string;
-  setsCompleted: number;
-  repsCompleted: number;
-  weightUsedKg?: number;
-  durationMinutes?: number;
-  notes?: string;
-  created_at: string;
-}
+// =====================================================
+// DASHBOARD & ANALYTICS TYPES
+// =====================================================
 
 export interface DailyActivitySummary {
   userId: string;
@@ -90,65 +156,40 @@ export interface AuthUser {
   created_at: string;
 }
 
-// Guided Workouts Types
-export interface WorkoutPlan {
-  id: string;
-  user_id?: string; // null for default plans
-  title: string;
-  description: string;
-  duration_minutes: number;
-  total_exercises: number;
-  est_calories: number;
-  created_at: string;
-}
-
-export interface WorkoutDay {
-  id: string;
-  plan_id: string;
-  day_number: number;
-  title?: string; // e.g., "Upper Body", "Cardio Day"
-}
-
-export interface Exercise {
-  id: string;
-  name: string;
-  category: string; // e.g., "strength", "cardio", "flexibility"
-  duration_seconds?: number;
-  reps?: number;
-  image_url?: string;
-  gif_url?: string;
-  instructions: string;
-}
-
-export interface WorkoutDayExercise {
-  id: string;
-  day_id: string;
-  exercise_id: string;
-  sort_order: number;
-  exercise?: Exercise; // Populated via join
-}
-
-export interface WorkoutCompletion {
-  id: string;
-  user_id: string;
-  plan_id: string;
-  day_id: string;
-  completed_at: string;
-  duration_minutes: number;
-  exercises_completed: number;
-  total_exercises: number;
-}
+// =====================================================
+// WORKOUT PLAYER TYPES
+// =====================================================
 
 export interface WorkoutPlayerState {
-  planId: string;
-  dayId: string;
-  exercises: (WorkoutDayExercise & { exercise: Exercise })[];
+  workoutId?: string;
+  demoWorkoutId?: string;
+  exercises: Exercise[];
   currentExerciseIndex: number;
   isPlaying: boolean;
   isPaused: boolean;
   timeRemaining?: number;
   startTime: Date;
+  sessionId?: string;
 }
 
-// Update View type to include guided workouts
-export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity' | 'guided-workouts';
+// =====================================================
+// UI TYPES
+// =====================================================
+
+export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'workouts' | 'activity';
+
+export interface LoadingState {
+  isLoading: boolean;
+  error?: string;
+}
+
+export interface WorkoutFilters {
+  category?: string;
+  muscleGroup?: string;
+  duration?: 'short' | 'medium' | 'long'; // <15min, 15-30min, >30min
+}
+
+export interface MealFilters {
+  date?: string;
+  category?: string;
+}

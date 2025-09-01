@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './services/supabaseService';
-import { mealService } from './services/supabaseService';
-import { workoutService } from './services/supabaseService';
-import { MealEntry, Workout } from './types';
+import { supabase, mealService, workoutSessionService } from './services/supabaseService';
+import { MealEntry, WorkoutSession } from './types';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
-import AddMealView from './components/AddMealView';
+import EnhancedAddMealView from './components/EnhancedAddMealView';
 import ProfileView from './components/ProfileView';
-import WorkoutView from './components/WorkoutView';
-import GuidedWorkoutsView from './components/GuidedWorkoutsView';
-import WorkoutPlanDetail from './components/WorkoutPlanDetail';
-import WorkoutPlayer from './components/WorkoutPlayer';
+import EnhancedGuidedWorkoutsView from './components/EnhancedGuidedWorkoutsView';
 import BottomNav from './components/BottomNav';
 
 
@@ -19,7 +14,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
 
@@ -71,7 +66,7 @@ function App() {
           setCurrentUserId(null);
           setIsAuthenticated(false);
           setMealEntries([]);
-          setWorkouts([]);
+          setWorkoutSessions([]);
         }
       }
     );
@@ -89,11 +84,11 @@ function App() {
       setMealEntries(meals);
       console.log('✅ Meals loaded:', meals.length);
       
-      // Load workouts
-      console.log('💪 Loading workouts...');
-      const userWorkouts = await workoutService.getWorkouts(userId);
-      setWorkouts(userWorkouts);
-      console.log('✅ Workouts loaded:', userWorkouts.length);
+      // Load workout sessions
+      console.log('💪 Loading workout sessions...');
+      const sessions = await workoutSessionService.getWorkoutSessions(userId);
+      setWorkoutSessions(sessions);
+      console.log('✅ Workout sessions loaded:', sessions.length);
       
       console.log('🎉 User data loading completed');
       
@@ -137,67 +132,30 @@ function App() {
 
 
 
-  const addMealEntry = async (meal: Omit<MealEntry, 'id' | 'created_at'>) => {
-    console.log('=== ADD MEAL ENTRY DEBUG ===');
+  const addMealEntry = (meal: MealEntry) => {
+    console.log('=== ADD MEAL ENTRY ===');
     console.log('Received meal data:', meal);
-    console.log('Current user ID:', currentUserId);
     
-    if (!currentUserId) {
-      console.error('No authenticated user found');
-      throw new Error('No authenticated user found');
-    }
-
-    try {
-      console.log('Calling mealService.addMeal...');
-      const savedMeal = await mealService.addMeal(meal, currentUserId);
-      console.log('Meal saved successfully:', savedMeal);
-      
-      // Map the saved meal to the correct format
-      const mappedMeal: MealEntry = {
-        id: savedMeal.id,
-        mealName: savedMeal.mealName,
-        portionSize: savedMeal.portionSize,
-        imageUrl: savedMeal.imageUrl,
-        calories: savedMeal.calories,
-        protein: savedMeal.protein,
-        carbs: savedMeal.carbs,
-        fat: savedMeal.fat,
-        date: savedMeal.date,
-        user_id: savedMeal.user_id,
-        created_at: savedMeal.created_at
-      };
-
-      console.log('Mapped meal:', mappedMeal);
-      console.log('Updating meal entries state...');
-      
-      setMealEntries(prev => {
-        const newEntries = [mappedMeal, ...prev];
-        console.log('New meal entries:', newEntries);
-        return newEntries;
-      });
-      
-      console.log('Meal entry added successfully!');
-      
-    } catch (error) {
-      console.error('Error saving meal:', error);
-      throw error;
-    }
+    setMealEntries(prev => {
+      const newEntries = [meal, ...prev];
+      console.log('New meal entries:', newEntries);
+      return newEntries;
+    });
+    
+    console.log('Meal entry added successfully!');
   };
 
-  const logWorkout = async (workout: Omit<Workout, 'id' | 'created_at'>) => {
-    if (!currentUserId) {
-      throw new Error('No authenticated user found');
-    }
-
-    try {
-      const workoutWithUserId = { ...workout, user_id: currentUserId };
-      const savedWorkout = await workoutService.createWorkout(workoutWithUserId, currentUserId);
-      setWorkouts(prev => [savedWorkout, ...prev]);
-      // Navigation will be handled by router
-    } catch (error) {
-      console.error('Error logging workout:', error);
-      throw error;
-    }
+  const handleWorkoutComplete = (session: WorkoutSession) => {
+    console.log('=== WORKOUT COMPLETED ===');
+    console.log('Completed session:', session);
+    
+    setWorkoutSessions(prev => {
+      const newSessions = [session, ...prev];
+      console.log('New workout sessions:', newSessions);
+      return newSessions;
+    });
+    
+    console.log('Workout session added successfully!');
   };
 
   // Calculate today's entries and totals
@@ -207,14 +165,7 @@ function App() {
     console.log('All meal entries:', mealEntries);
     
     const entries = mealEntries.filter(entry => {
-      const entryDate = entry.date;
-      console.log('Entry date:', entryDate, 'Type:', typeof entryDate);
-      
-      // Handle both date strings and Date objects
-      if (typeof entryDate === 'string') {
-        return entryDate.includes(today) || entryDate.split('T')[0] === today;
-      }
-      return false;
+      return entry.date === today;
     });
     
     console.log('Filtered today\'s entries:', entries);
@@ -234,16 +185,13 @@ function App() {
   // Calculate workout calories burned today
   const todaysWorkoutCalories = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return workouts
-      .filter(workout => {
-        // Handle both date strings and Date objects
-        if (typeof workout.workout_date === 'string') {
-          return workout.workout_date.includes(today) || workout.workout_date.split('T')[0] === today;
-        }
-        return false;
+    return workoutSessions
+      .filter(session => {
+        const sessionDate = session.started_at.split('T')[0];
+        return sessionDate === today && session.completed_at; // Only completed sessions
       })
-      .reduce((total, workout) => total + (workout.calories_burned || 0), 0);
-  }, [workouts]);
+      .reduce((total, session) => total + (session.calories_burned || 0), 0);
+  }, [workoutSessions]);
 
   // Calculate net calories (consumed - burned)
   const netCalories = todaysEntries.totals.calories - todaysWorkoutCalories;
@@ -254,9 +202,8 @@ function App() {
     isLoading,
     isAuthenticated,
     currentUserId,
-    userProfile: null, // Removed userProfile
     mealEntriesCount: mealEntries.length,
-    workoutsCount: workouts.length
+    workoutSessionsCount: workoutSessions.length
   });
 
   // Force loading to false if stuck
@@ -316,10 +263,9 @@ function App() {
             <Route 
               path="/add-meal" 
               element={
-                <AddMealView
-                  onConfirm={addMealEntry}
-                  onCancel={() => window.history.back()}
+                <EnhancedAddMealView
                   currentUserId={currentUserId}
+                  onMealAdded={addMealEntry}
                 />
               } 
             />
@@ -334,34 +280,9 @@ function App() {
             <Route 
               path="/workouts" 
               element={
-                <WorkoutView
+                <EnhancedGuidedWorkoutsView
                   currentUserId={currentUserId}
-                  workouts={workouts}
-                  onWorkoutUpdate={setWorkouts}
-                />
-              } 
-            />
-            <Route 
-              path="/guided-workouts" 
-              element={
-                <GuidedWorkoutsView
-                  currentUserId={currentUserId}
-                />
-              } 
-            />
-            <Route 
-              path="/guided-workouts/plan/:planId" 
-              element={
-                <WorkoutPlanDetail
-                  currentUserId={currentUserId}
-                />
-              } 
-            />
-            <Route 
-              path="/guided-workouts/player/:planId/:dayId" 
-              element={
-                <WorkoutPlayer
-                  currentUserId={currentUserId}
+                  onWorkoutComplete={handleWorkoutComplete}
                 />
               } 
             />
