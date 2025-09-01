@@ -178,9 +178,6 @@ function App() {
       
       console.log('Meal entry added successfully!');
       
-      // Navigate back to dashboard after successful meal addition
-      window.history.back();
-      
     } catch (error) {
       console.error('Error saving meal:', error);
       throw error;

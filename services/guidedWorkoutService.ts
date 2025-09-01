@@ -2,66 +2,36 @@ import { supabase } from './supabaseService';
 import { WorkoutPlan, WorkoutDay, Exercise, WorkoutDayExercise, WorkoutCompletion } from '../types';
 
 export const guidedWorkoutService = {
-  // Plan management with timeout protection
+  // Plan management
   async getWorkoutPlans(userId?: string): Promise<WorkoutPlan[]> {
     try {
-      console.log('🔍 getWorkoutPlans called with userId:', userId);
+      console.log('🔍 Loading workout plans for user:', userId);
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Database query timeout after 10 seconds'));
-        }, 10000);
-      });
+      let query = supabase
+        .from('workout_plans')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      // Create the actual query promise
-      const queryPromise = (async () => {
-        console.log('📊 Executing workout plans query...');
-        
-        let query = supabase
-          .from('workout_plans')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        // Apply user filter if provided
-        if (userId) {
-          // Get both default plans (user_id is null) and user's custom plans
-          query = query.or(`user_id.is.null,user_id.eq.${userId}`);
-        } else {
-          // Only get default plans
-          query = query.is('user_id', null);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error('❌ Database error:', error);
-          throw new Error(`Database error: ${error.message} (Code: ${error.code})`);
-        }
-        
-        console.log('✅ Query successful, found', data?.length || 0, 'plans');
-        return data || [];
-      })();
-      
-      // Race between query and timeout
-      const result = await Promise.race([queryPromise, timeoutPromise]);
-      
-      console.log('✅ Returning', result.length, 'workout plans');
-      return result;
-      
-    } catch (error: any) {
-      console.error('❌ Error in getWorkoutPlans:', error);
-      
-      // Provide more specific error messages
-      if (error.message.includes('timeout')) {
-        throw new Error('Database connection timeout. Please check your internet connection and try again.');
-      } else if (error.message.includes('permission')) {
-        throw new Error('Permission denied. Please make sure you are logged in.');
-      } else if (error.code === 'PGRST116') {
-        throw new Error('Table not found. The database may need to be set up.');
+      if (userId) {
+        // Get both default plans (user_id is null) and user's custom plans
+        query = query.or(`user_id.is.null,user_id.eq.${userId}`);
       } else {
-        throw new Error(`Failed to load workout plans: ${error.message}`);
+        // Only get default plans
+        query = query.is('user_id', null);
       }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching workout plans:', error);
+        throw new Error('Failed to fetch workout plans');
+      }
+      
+      console.log('✅ Successfully loaded', data?.length || 0, 'workout plans');
+      return data || [];
+    } catch (error) {
+      console.error('Error in getWorkoutPlans:', error);
+      throw error;
     }
   },
 

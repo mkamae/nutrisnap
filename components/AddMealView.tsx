@@ -137,13 +137,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       const result = await analyzeImageWithGemini(base64Image, imageFile.type);
       console.log('Analysis result:', result);
       setAnalysisResult(result);
-      setDebugInfo('Analysis completed successfully');
-      
-      // Auto-save the meal after successful analysis
-      if (result) {
-        setDebugInfo('Auto-saving meal...');
-        await handleConfirm();
-      }
+      setDebugInfo('Analysis completed successfully - ready to save meal');
       
     } catch (err: any) {
       console.error('Analysis error:', err);
@@ -204,23 +198,14 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       
       console.log('Meal confirmed successfully!');
       
-      // Show success state
+      // Show success state briefly, then navigate back
       setIsSuccess(true);
       setDebugInfo('Meal added successfully! Redirecting...');
       
-      // Clear the form after successful confirmation
+      // Navigate back to dashboard after a brief delay
       setTimeout(() => {
-        setAnalysisResult(null);
-        setImageFile(null);
-        if (previewUrl) {
-          URL.revokeObjectURL(previewUrl);
-        }
-        setPreviewUrl(null);
-        setError(null);
-        setIsSuccess(false);
-        setIsConfirming(false);
-        setDebugInfo('');
-      }, 2000);
+        onCancel(); // This will trigger navigation back
+      }, 1500);
       
     } catch (error) {
       console.error('Error in handleConfirm:', error);
