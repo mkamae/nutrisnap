@@ -5,6 +5,7 @@ import { guidedWorkoutService } from '../services/guidedWorkoutService';
 import WorkoutHistory from './WorkoutHistory';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import DatabaseDebug from './DatabaseDebug';
 
 interface GuidedWorkoutsViewProps {
   currentUserId: string | null;
@@ -68,6 +69,11 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
           <p className="text-gray-600 dark:text-gray-400">
             Choose from professionally designed workout plans or create your own
           </p>
+        </div>
+
+        {/* Database Debug Tool */}
+        <div className="mb-8">
+          <DatabaseDebug />
         </div>
 
         {/* Workout History */}
