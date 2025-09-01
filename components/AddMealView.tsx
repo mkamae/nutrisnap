@@ -1,14 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MealEntry } from '../types';
 import { analyzeImageWithGemini } from '../services/geminiService';
 import { imageStorageService } from '../services/imageStorageService';
 import { fileToBase64 } from '../utils/helpers';
 import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
-import MealAnalysisTester from './MealAnalysisTester';
-import MealServiceTester from './MealServiceTester';
-import StorageTester from './StorageTester';
-import StorageSetupInstructions from './StorageSetupInstructions';
 
 interface AddMealViewProps {
   onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => Promise<void>;
@@ -17,6 +14,7 @@ interface AddMealViewProps {
 }
 
 const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentUserId }) => {
+  const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +22,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,10 +37,8 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   }, [isCameraOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('File input changed:', e.target.files);
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      console.log('Selected file:', file.name, file.type, file.size);
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
@@ -51,7 +46,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       setPreviewUrl(URL.createObjectURL(file));
       setError(null);
       setAnalysisResult(null);
-      setDebugInfo(`File selected: ${file.name} (${file.type})`);
     }
   };
   
@@ -63,11 +57,9 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
     setPreviewUrl(null);
     setError(null);
     setAnalysisResult(null);
-    setDebugInfo('');
   };
   
   const handleStartCamera = async () => {
-    console.log('Starting camera...');
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -79,15 +71,12 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         });
         streamRef.current = stream;
         setIsCameraOpen(true);
-        setDebugInfo('Camera started successfully');
       } catch (err) {
         console.error("Error accessing camera:", err);
         setError("Could not access camera. Please check permissions.");
-        setDebugInfo(`Camera error: ${err}`);
       }
     } else {
       setError("Camera is not supported on this device.");
-      setDebugInfo('Camera not supported');
     }
   };
 
@@ -96,7 +85,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       streamRef.current.getTracks().forEach(track => track.stop());
     }
     setIsCameraOpen(false);
-    setDebugInfo('Camera stopped');
   };
 
   const handleTakePicture = () => {
@@ -118,7 +106,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
             setPreviewUrl(URL.createObjectURL(file));
             setAnalysisResult(null);
             setError(null);
-            setDebugInfo(`Photo taken: ${file.name} (${file.size} bytes)`);
             handleStopCamera();
           }
         }, 'image/jpeg', 0.8);
@@ -140,37 +127,23 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
     setIsLoading(true);
     setError(null);
     setAnalysisResult(null);
-    setDebugInfo('Starting analysis...');
     
     try {
-      console.log('Converting file to base64...');
       const base64Image = await fileToBase64(imageFile);
-      console.log('Base64 length:', base64Image.length);
-      setDebugInfo('Image converted, calling Gemini...');
-      
       const result = await analyzeImageWithGemini(base64Image, imageFile.type);
-      console.log('Analysis result:', result);
       setAnalysisResult(result);
       
       // Upload image to permanent storage after successful analysis
-      setDebugInfo('Analysis completed, uploading image...');
       setIsUploading(true);
-      
       const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
       
       if (uploadResult.success) {
         setUploadedImageUrl(uploadResult.url!);
-        setDebugInfo('Analysis and image upload completed successfully - ready to save meal');
-        console.log('✅ Image uploaded to permanent storage:', uploadResult.url);
-      } else {
-        console.warn('⚠️ Image upload failed, will use temporary URL:', uploadResult.error);
-        setDebugInfo('Analysis completed, image upload failed - will use temporary storage');
       }
       
     } catch (err: any) {
       console.error('Analysis error:', err);
       setError(err.message || "An unknown error occurred.");
-      setDebugInfo(`Analysis failed: ${err.message}`);
     } finally {
       setIsLoading(false);
       setIsUploading(false);
@@ -178,11 +151,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   };
 
   const handleConfirm = async () => {
-    console.log('=== HANDLE CONFIRM DEBUG ===');
-    console.log('Analysis result:', analysisResult);
-    console.log('Preview URL:', previewUrl);
-    console.log('Uploaded image URL:', uploadedImageUrl);
-    
     if (!analysisResult) {
       setError('No analysis result available. Please analyze an image first.');
       return;
@@ -212,9 +180,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       
       // If we don't have an uploaded URL but have an image file, upload it now
       if (!finalImageUrl && imageFile) {
-        console.log('📸 Uploading image before saving meal...');
-        setDebugInfo('Uploading image...');
-        
         const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
         
         if (!uploadResult.success) {
@@ -223,7 +188,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         
         finalImageUrl = uploadResult.url!;
         setUploadedImageUrl(finalImageUrl);
-        console.log('✅ Image uploaded successfully:', finalImageUrl);
       }
       
       // Ensure all numeric fields have proper values
@@ -238,21 +202,15 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         date: new Date().toISOString().split('T')[0]
       };
       
-      console.log('Meal data to confirm:', meal);
-      console.log('Calling onConfirm with meal:', meal);
-      
       // Call the parent's onConfirm function
       await onConfirm(meal);
       
-      console.log('Meal confirmed successfully!');
-      
       // Show success state briefly, then navigate back
       setIsSuccess(true);
-      setDebugInfo('Meal added successfully! Redirecting...');
       
       // Navigate back to dashboard after a brief delay
       setTimeout(() => {
-        onCancel(); // This will trigger navigation back
+        navigate('/');
       }, 1500);
       
     } catch (error) {
@@ -286,26 +244,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add Meal</h1>
           <p className="text-gray-600 dark:text-gray-400">Take a photo or upload an image to analyze your meal</p>
-        </div>
-
-        {/* Meal Analysis Tester */}
-        <div className="mb-6">
-          <MealAnalysisTester />
-        </div>
-
-        {/* Meal Service Tester */}
-        <div className="mb-6">
-          <MealServiceTester />
-        </div>
-
-        {/* Storage Setup Instructions */}
-        <div className="mb-6">
-          <StorageSetupInstructions />
-        </div>
-
-        {/* Storage Tester */}
-        <div className="mb-6">
-          <StorageTester />
         </div>
 
         {/* Main Content */}
@@ -344,28 +282,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
               </div>
             </div>
           </div>
-
-          {/* Camera View */}
-          {isCameraOpen && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Camera</h3>
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full rounded-lg"
-                />
-                <canvas ref={canvasRef} className="hidden" />
-                <button
-                  onClick={handleTakePicture}
-                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 btn-primary"
-                >
-                  Take Picture
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Image Preview */}
           {previewUrl && (
@@ -515,68 +431,6 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
               <p className="text-sm text-green-600 dark:text-green-400 text-center">
                 Meal added successfully! Redirecting...
               </p>
-            </div>
-          )}
-
-          {/* Debug Info (Development Only) */}
-          {debugInfo && process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Debug: {debugInfo}
-              </p>
-            </div>
-          )}
-
-          {/* Test Button (Development Only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="card">
-              <h3 className="card-header">Debug Tools</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    console.log('=== TEST MEAL DATA ===');
-                    console.log('Current analysis result:', analysisResult);
-                    console.log('Current preview URL:', previewUrl);
-                    console.log('Current image file:', imageFile);
-                    
-                    // Create a test meal
-                    const testMeal: Omit<MealEntry, 'id' | 'created_at'> = {
-                      mealName: 'Test Meal',
-                      calories: 500,
-                      protein: 25,
-                      carbs: 60,
-                      fat: 20,
-                      portionSize: '1 serving',
-                      imageUrl: 'data:image/jpeg;base64,test',
-                      date: new Date().toISOString().split('T')[0]
-                    };
-                    
-                    console.log('Test meal data:', testMeal);
-                    console.log('Calling onConfirm with test meal...');
-                    
-                    // Test the onConfirm function
-                    onConfirm(testMeal).then(() => {
-                      console.log('Test meal confirmed successfully!');
-                      setDebugInfo('Test meal added successfully!');
-                    }).catch((error) => {
-                      console.error('Test meal failed:', error);
-                      setError(`Test meal failed: ${error.message}`);
-                    });
-                  }}
-                  className="btn-secondary w-full"
-                >
-                  Test Meal Addition
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setDebugInfo(`Analysis Result: ${JSON.stringify(analysisResult, null, 2)}`);
-                  }}
-                  className="btn-secondary w-full"
-                >
-                  Log Analysis Result
-                </button>
-              </div>
             </div>
           )}
         </div>

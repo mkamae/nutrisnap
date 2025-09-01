@@ -7,6 +7,17 @@ export const guidedWorkoutService = {
     try {
       console.log('🔍 Loading workout plans for user:', userId);
       
+      // First check if the table exists by trying a simple query
+      const { data: tableCheck, error: tableError } = await supabase
+        .from('workout_plans')
+        .select('count')
+        .limit(1);
+      
+      if (tableError) {
+        console.error('❌ workout_plans table not found or accessible:', tableError);
+        throw new Error(`Database table not found: ${tableError.message}. Please run the database setup script.`);
+      }
+      
       let query = supabase
         .from('workout_plans')
         .select('*')
@@ -23,14 +34,14 @@ export const guidedWorkoutService = {
       const { data, error } = await query;
       
       if (error) {
-        console.error('Error fetching workout plans:', error);
-        throw new Error('Failed to fetch workout plans');
+        console.error('❌ Error fetching workout plans:', error);
+        throw new Error(`Failed to fetch workout plans: ${error.message}`);
       }
       
       console.log('✅ Successfully loaded', data?.length || 0, 'workout plans');
       return data || [];
     } catch (error) {
-      console.error('Error in getWorkoutPlans:', error);
+      console.error('❌ Error in getWorkoutPlans:', error);
       throw error;
     }
   },
