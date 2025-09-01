@@ -90,5 +90,65 @@ export interface AuthUser {
   created_at: string;
 }
 
-// Update View type to remove guided workouts
-export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity';
+// Guided Workouts Types
+export interface WorkoutPlan {
+  id: string;
+  user_id?: string; // null for default plans
+  title: string;
+  description: string;
+  duration_minutes: number;
+  total_exercises: number;
+  est_calories: number;
+  created_at: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  plan_id: string;
+  day_number: number;
+  title?: string; // e.g., "Upper Body", "Cardio Day"
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string; // e.g., "strength", "cardio", "flexibility"
+  duration_seconds?: number;
+  reps?: number;
+  image_url?: string;
+  gif_url?: string;
+  instructions: string;
+}
+
+export interface WorkoutDayExercise {
+  id: string;
+  day_id: string;
+  exercise_id: string;
+  sort_order: number;
+  exercise?: Exercise; // Populated via join
+}
+
+export interface WorkoutCompletion {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  day_id: string;
+  completed_at: string;
+  duration_minutes: number;
+  exercises_completed: number;
+  total_exercises: number;
+}
+
+export interface WorkoutPlayerState {
+  planId: string;
+  dayId: string;
+  exercises: (WorkoutDayExercise & { exercise: Exercise })[];
+  currentExerciseIndex: number;
+  isPlaying: boolean;
+  isPaused: boolean;
+  timeRemaining?: number;
+  startTime: Date;
+}
+
+// Update View type to include guided workouts
+export type View = 'dashboard' | 'add_meal' | 'progress' | 'profile' | 'onboarding' | 'workouts' | 'activity' | 'guided-workouts';

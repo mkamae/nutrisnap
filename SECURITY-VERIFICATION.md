@@ -12,7 +12,7 @@
 ### Verification:
 ```bash
 # No real API keys found in codebase
-grep -r "AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs" . --exclude-dir=node_modules
+grep -r "YOUR_GEMINI_API_KEY_HERE" . --exclude-dir=node_modules
 # Only found in fix-before-push.sh (expected)
 ```
 

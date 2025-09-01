@@ -12,7 +12,7 @@ const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // UI/UX CLEANUP: Simplified navigation - only core features
+  // Navigation items including guided workouts
   const navItems = [
     {
       id: '/',
@@ -31,6 +31,12 @@ const BottomNav: React.FC = () => {
       label: 'Workouts',
       icon: ChartBarIcon,
       color: 'text-purple-600'
+    },
+    {
+      id: '/guided-workouts',
+      label: 'Guided',
+      icon: ChartBarIcon, // We'll use the same icon for now
+      color: 'text-orange-600'
     },
     {
       id: '/profile',

@@ -1,0 +1,118 @@
+/* Mobile Workout Player Optimizations */
+
+/* Prevent text selection during workouts */
+.workout-player {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* Prevent zoom on double tap */
+  touch-action: manipulation;
+}
+
+/* Landscape mode optimizations */
+.landscape-mode {
+  /* Adjust layout for landscape orientation */
+}
+
+.landscape-mode .workout-header {
+  padding: 0.5rem 1rem;
+}
+
+.landscape-mode .exercise-display {
+  flex-direction: row;
+  align-items: center;
+  gap: 2rem;
+}
+
+.landscape-mode .exercise-visual {
+  width: 200px;
+  height: 200px;
+}
+
+.landscape-mode .exercise-info {
+  flex: 1;
+  text-align: left;
+}
+
+/* Portrait mode optimizations */
+.portrait-mode .exercise-display {
+  flex-direction: column;
+  text-align: center;
+}
+
+.portrait-mode .exercise-visual {
+  width: 256px;
+  height: 256px;
+  margin: 0 auto;
+}
+
+/* Touch-friendly button sizes */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem;
+}
+
+/* Prevent bounce scrolling on iOS */
+.no-bounce {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Full screen workout mode */
+.fullscreen-workout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* Hide address bar on mobile browsers */
+@media screen and (max-height: 500px) {
+  .mobile-fullscreen {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for newer browsers */
+  }
+}
+
+/* Improve tap targets for accessibility */
+@media (hover: none) and (pointer: coarse) {
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .small-tap-target {
+    min-height: 32px;
+    min-width: 32px;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .workout-player * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .workout-player {
+    --bg-primary: #000000;
+    --text-primary: #ffffff;
+    --accent-color: #ffff00;
+  }
+}
+
+/* Dark mode optimizations for OLED screens */
+@media (prefers-color-scheme: dark) {
+  .workout-player {
+    background-color: #000000; /* True black for OLED */
+  }
+}

@@ -9,6 +9,9 @@ import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import WorkoutView from './components/WorkoutView';
+import GuidedWorkoutsView from './components/GuidedWorkoutsView';
+import WorkoutPlanDetail from './components/WorkoutPlanDetail';
+import WorkoutPlayer from './components/WorkoutPlayer';
 import BottomNav from './components/BottomNav';
 
 
@@ -337,6 +340,30 @@ function App() {
                   currentUserId={currentUserId}
                   workouts={workouts}
                   onWorkoutUpdate={setWorkouts}
+                />
+              } 
+            />
+            <Route 
+              path="/guided-workouts" 
+              element={
+                <GuidedWorkoutsView
+                  currentUserId={currentUserId}
+                />
+              } 
+            />
+            <Route 
+              path="/guided-workouts/plan/:planId" 
+              element={
+                <WorkoutPlanDetail
+                  currentUserId={currentUserId}
+                />
+              } 
+            />
+            <Route 
+              path="/guided-workouts/player/:planId/:dayId" 
+              element={
+                <WorkoutPlayer
+                  currentUserId={currentUserId}
                 />
               } 
             />
