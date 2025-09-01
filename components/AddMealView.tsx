@@ -5,6 +5,7 @@ import { fileToBase64 } from '../utils/helpers';
 import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
 import MealAnalysisTester from './MealAnalysisTester';
+import MealServiceTester from './MealServiceTester';
 
 interface AddMealViewProps {
   onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => Promise<void>;
@@ -244,6 +245,11 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
         {/* Meal Analysis Tester */}
         <div className="mb-6">
           <MealAnalysisTester />
+        </div>
+
+        {/* Meal Service Tester */}
+        <div className="mb-6">
+          <MealServiceTester />
         </div>
 
         {/* Main Content */}

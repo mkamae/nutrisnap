@@ -54,28 +54,40 @@ export const testSupabaseConnection = async () => {
 export const mealService = {
   async addMeal(meal: Omit<MealEntry, 'id' | 'created_at'>, userId: string): Promise<MealEntry> {
     try {
+      console.log('🍽️ mealService.addMeal called with:', { meal, userId });
+      
+      const insertData = {
+        mealname: meal.mealName,       // lowercase DB column
+        portionsize: meal.portionSize, // lowercase DB column
+        imageurl: meal.imageUrl,       // lowercase DB column
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+        date: meal.date,
+        user_id: userId,
+      };
+      
+      console.log('📊 Insert data:', insertData);
+      
       const { data, error } = await supabase
         .from('meals')
-        .insert([
-          {
-            mealname: meal.mealName,       // lowercase DB column
-            portionsize: meal.portionSize, // lowercase DB column
-            imageurl: meal.imageUrl,       // lowercase DB column
-            calories: meal.calories,
-            protein: meal.protein,
-            carbs: meal.carbs,
-            fat: meal.fat,
-            date: meal.date,
-            user_id: userId,
-          }
-        ])
+        .insert([insertData])
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding meal:', error);
-        throw new Error('Failed to add meal');
+        console.error('❌ Database error adding meal:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw new Error(`Failed to add meal: ${error.message} (Code: ${error.code})`);
       }
+      
+      console.log('✅ Meal added successfully:', data);
 
       // Map database response back to app format
       const mappedMeal: MealEntry = {
