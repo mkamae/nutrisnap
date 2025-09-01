@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Guided Workouts Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .warning {
+            color: orange;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ Guided Workouts Database Setup</h1>
+        <p>This tool will set up the guided workouts database tables and insert sample data.</p>
+        
+        <div class="input-group">
+            <label for="supabaseUrl">Supabase URL:</label>
+            <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+        </div>
+        
+        <div class="input-group">
+            <label for="supabaseKey">Supabase Anon Key:</label>
+            <input type="text" id="supabaseKey" placeholder="Your anon key">
+        </div>
+        
+        <button class="button" onclick="testConnection()">Test Connection</button>
+        <button class="button" onclick="setupDatabase()">Setup Database</button>
+        <button class="button" onclick="checkStatus()">Check Status</button>
+        <button class="button" onclick="clearLog()">Clear Log</button>
+        
+        <div id="log" class="log">Ready to setup guided workouts database...\n</div>
+    </div>
+
+    <script>
+        let supabase = null;
+        
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log cleared...\n';
+        }
+        
+        function initSupabase() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            if (!url || !key) {
+                log('Please enter both Supabase URL and Anon Key', 'error');
+                return false;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                log('Supabase client initialized', 'success');
+                return true;
+            } catch (error) {
+                log(`Error initializing Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testConnection() {
+            if (!initSupabase()) return;
+            
+            log('Testing connection...');
+            try {
+                const { data, error } = await supabase.from('meals').select('count').limit(1);
+                if (error) {
+                    log(`Connection test failed: ${error.message}`, 'error');
+                } else {
+                    log('Connection successful!', 'success');
+                }
+            } catch (error) {
+                log(`Connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkStatus() {
+            if (!initSupabase()) return;
+            
+            log('Checking database status...');
+            
+            const tables = ['exercises', 'workout_plans', 'workout_days', 'workout_day_exercises'];
+            
+            for (const table of tables) {
+                try {
+                    const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+                    if (error) {
+                        log(`❌ Table '${table}': ${error.message}`, 'error');
+                    } else {
+                        log(`✅ Table '${table}': ${count} records`, 'success');
+                    }
+                } catch (error) {
+                    log(`❌ Table '${table}': ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function setupDatabase() {
+            if (!initSupabase()) return;
+            
+            log('Starting database setup...');
+            
+            try {
+                // Create tables
+                log('Creating tables...');
+                await createTables();
+                
+                // Insert data
+                log('Inserting sample data...');
+                await insertSampleData();
+                
+                log('Database setup completed successfully!', 'success');
+                
+            } catch (error) {
+                log(`Setup failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTables() {
+            const createTableSQL = `
+                -- Create exercises table
+                CREATE TABLE IF NOT EXISTS exercises (
+                    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                    name text NOT NULL,
+                    category text NOT NULL,
+                    duration_seconds integer,
+                    reps integer,
+                    instructions text,
+                    gif_url text,
+                    created_at timestamptz DEFAULT now()
+                );
+
+                -- Create workout_plans table
+                CREATE TABLE IF NOT EXISTS workout_plans (
+                    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+                    title text NOT NULL,
+                    description text,
+                    duration_minutes integer NOT NULL,
+                    total_exercises integer NOT NULL,
+                    est_calories integer,
+                    created_at timestamptz DEFAULT now()
+                );
+
+                -- Create workout_days table
+                CREATE TABLE IF NOT EXISTS workout_days (
+                    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                    plan_id uuid REFERENCES workout_plans(id) ON DELETE CASCADE,
+                    day_number integer NOT NULL,
+                    title text NOT NULL,
+                    created_at timestamptz DEFAULT now()
+                );
+
+                -- Create workout_day_exercises table
+                CREATE TABLE IF NOT EXISTS workout_day_exercises (
+                    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                    day_id uuid REFERENCES workout_days(id) ON DELETE CASCADE,
+                    exercise_id uuid REFERENCES exercises(id) ON DELETE CASCADE,
+                    sort_order integer NOT NULL,
+                    created_at timestamptz DEFAULT now()
+                );
+
+                -- Create workout_completions table
+                CREATE TABLE IF NOT EXISTS workout_completions (
+                    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+                    plan_id uuid REFERENCES workout_plans(id) ON DELETE CASCADE,
+                    day_id uuid REFERENCES workout_days(id) ON DELETE CASCADE,
+                    duration_minutes integer,
+                    exercises_completed integer,
+                    total_exercises integer,
+                    completed_at timestamptz DEFAULT now()
+                );
+            `;
+            
+            const { error } = await supabase.rpc('exec_sql', { sql: createTableSQL });
+            if (error) {
+                log(`Error creating tables: ${error.message}`, 'error');
+                throw error;
+            }
+            log('Tables created successfully', 'success');
+        }
+        
+        async function insertSampleData() {
+            // Insert exercises
+            const exercises = [
+                { name: 'Push-ups', category: 'strength', reps: 10, instructions: 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up to starting position.' },
+                { name: 'Squats', category: 'strength', reps: 15, instructions: 'Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and knees behind your toes. Return to standing.' },
+                { name: 'Plank', category: 'core', duration_seconds: 30, instructions: 'Start in a push-up position but rest on your forearms. Keep your body in a straight line from head to heels. Hold this position.' },
+                { name: 'Jumping Jacks', category: 'cardio', duration_seconds: 30, instructions: 'Stand with feet together and arms at your sides. Jump while spreading your legs shoulder-width apart and raising your arms overhead. Jump back to starting position.' }
+            ];
+            
+            const { error: exerciseError } = await supabase.from('exercises').insert(exercises);
+            if (exerciseError) {
+                log(`Error inserting exercises: ${exerciseError.message}`, 'error');
+                throw exerciseError;
+            }
+            log('Exercises inserted successfully', 'success');
+            
+            // Insert workout plans
+            const plans = [
+                { user_id: null, title: 'Quick Start Workout', description: 'A simple 10-minute workout to get you started', duration_minutes: 10, total_exercises: 4, est_calories: 80 },
+                { user_id: null, title: 'Bodyweight Basics', description: 'No equipment needed - just your body weight', duration_minutes: 15, total_exercises: 5, est_calories: 120 }
+            ];
+            
+            const { data: insertedPlans, error: planError } = await supabase.from('workout_plans').insert(plans).select();
+            if (planError) {
+                log(`Error inserting workout plans: ${planError.message}`, 'error');
+                throw planError;
+            }
+            log('Workout plans inserted successfully', 'success');
+            
+            // Insert workout days and exercises for each plan
+            for (const plan of insertedPlans) {
+                const { data: day, error: dayError } = await supabase
+                    .from('workout_days')
+                    .insert({ plan_id: plan.id, day_number: 1, title: 'Day 1' })
+                    .select()
+                    .single();
+                
+                if (dayError) {
+                    log(`Error inserting workout day: ${dayError.message}`, 'error');
+                    continue;
+                }
+                
+                // Get some exercises to assign
+                const { data: availableExercises } = await supabase.from('exercises').select('id').limit(4);
+                if (availableExercises) {
+                    const dayExercises = availableExercises.map((exercise, index) => ({
+                        day_id: day.id,
+                        exercise_id: exercise.id,
+                        sort_order: index + 1
+                    }));
+                    
+                    await supabase.from('workout_day_exercises').insert(dayExercises);
+                }
+            }
+            
+            log('Sample data inserted successfully', 'success');
+        }
+    </script>
+</body>
+</html>

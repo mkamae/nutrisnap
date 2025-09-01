@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MealEntry } from '../types';
 import MealDebugInfo from './MealDebugInfo';
 import MealFlowTester from './MealFlowTester';
+import StorageDebugger from './StorageDebugger';
 
 interface DashboardViewProps {
   entries: MealEntry[];
@@ -51,6 +52,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         currentUserId={currentUserId}
       />
       
+      {/* Storage Tester - Remove in production */}
+      <StorageDebugger currentUserId={currentUserId} />
+
       {/* Meal Flow Tester - Remove in production */}
       {onMealAdded && (
         <MealFlowTester 

@@ -6,6 +6,7 @@ import WorkoutHistory from './WorkoutHistory';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import GuidedWorkoutsDebugger from './GuidedWorkoutsDebugger';
+import QuickWorkoutTest from './QuickWorkoutTest';
 
 interface GuidedWorkoutsViewProps {
   currentUserId: string | null;
@@ -124,6 +125,11 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
           <p className="text-gray-600 dark:text-gray-400">
             Choose from professionally designed workout plans or create your own
           </p>
+        </div>
+
+        {/* Quick Test Panel */}
+        <div className="mb-6">
+          <QuickWorkoutTest />
         </div>
 
         {/* Debug Panel */}
