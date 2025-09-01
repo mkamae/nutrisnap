@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MealEntry } from '../types';
+import MealDebugInfo from './MealDebugInfo';
+import MealFlowTester from './MealFlowTester';
 
 interface DashboardViewProps {
   entries: MealEntry[];
@@ -8,6 +10,9 @@ interface DashboardViewProps {
   workoutCalories?: number;
   netCalories?: number;
   caloriesLeft?: number;
+  allMealEntries?: MealEntry[]; // For debugging
+  currentUserId?: string | null; // For debugging
+  onMealAdded?: (meal: MealEntry) => void; // For testing
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
@@ -15,7 +20,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   profile, 
   workoutCalories = 0,
   netCalories = 0,
-  caloriesLeft = 0
+  caloriesLeft = 0,
+  allMealEntries = [],
+  currentUserId = null,
+  onMealAdded
 }) => {
   const navigate = useNavigate();
   // Default daily calorie goal since profiles are no longer managed
@@ -36,6 +44,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 p-4">
+      {/* Debug Info - Remove in production */}
+      <MealDebugInfo 
+        mealEntries={allMealEntries}
+        todaysEntries={entries}
+        currentUserId={currentUserId}
+      />
+      
+      {/* Meal Flow Tester - Remove in production */}
+      {onMealAdded && (
+        <MealFlowTester 
+          currentUserId={currentUserId}
+          onMealAdded={onMealAdded}
+        />
+      )}
+      
       {/* Welcome Header */}
       <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

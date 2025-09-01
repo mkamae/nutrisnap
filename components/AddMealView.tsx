@@ -33,8 +33,20 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   useEffect(() => {
     if (isCameraOpen && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
+    } else if (!isCameraOpen && videoRef.current) {
+      // Clear the video source when camera is closed
+      videoRef.current.srcObject = null;
     }
   }, [isCameraOpen]);
+
+  // Cleanup camera stream on component unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -83,6 +95,10 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   const handleStopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
   };
