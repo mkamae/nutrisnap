@@ -4,6 +4,7 @@ import { analyzeImageWithGemini } from '../services/geminiService';
 import { fileToBase64 } from '../utils/helpers';
 import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
+import MealAnalysisTester from './MealAnalysisTester';
 
 interface AddMealViewProps {
   onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => Promise<void>;
@@ -238,6 +239,11 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add Meal</h1>
           <p className="text-gray-600 dark:text-gray-400">Take a photo or upload an image to analyze your meal</p>
+        </div>
+
+        {/* Meal Analysis Tester */}
+        <div className="mb-6">
+          <MealAnalysisTester />
         </div>
 
         {/* Main Content */}

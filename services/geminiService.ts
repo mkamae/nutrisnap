@@ -2,10 +2,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Nutrients } from '../types';
 
-const API_KEY = __GEMINI_API_KEY__;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable not set.");
+  console.error('❌ Missing Gemini API key');
+  console.error('VITE_GEMINI_API_KEY:', API_KEY ? '✅ Set' : '❌ Missing');
+  throw new Error("VITE_GEMINI_API_KEY environment variable not set. Check your .env.local file.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });

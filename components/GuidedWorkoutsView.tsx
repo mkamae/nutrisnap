@@ -5,6 +5,7 @@ import { guidedWorkoutService } from '../services/guidedWorkoutService';
 import WorkoutHistory from './WorkoutHistory';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import GuidedWorkoutsDebugger from './GuidedWorkoutsDebugger';
 
 
 interface GuidedWorkoutsViewProps {
@@ -77,6 +78,11 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
         {/* Workout History */}
         <div className="mb-8">
           <WorkoutHistory currentUserId={currentUserId} />
+        </div>
+
+        {/* Debugger */}
+        <div className="mb-8">
+          <GuidedWorkoutsDebugger />
         </div>
 
 
