@@ -2,170 +2,66 @@ import { supabase } from './supabaseService';
 import { WorkoutPlan, WorkoutDay, Exercise, WorkoutDayExercise, WorkoutCompletion } from '../types';
 
 export const guidedWorkoutService = {
-  // Initialize default data if needed
-  async initializeDefaultData(): Promise<void> {
-    try {
-      console.log('🔍 Checking if default workout data exists...');
-      
-      // Check if we have any default workout plans
-      const { data: existingPlans, error: plansError } = await supabase
-        .from('workout_plans')
-        .select('id')
-        .is('user_id', null)
-        .limit(1);
-      
-      if (plansError) {
-        console.error('Error checking existing plans:', plansError);
-        return;
-      }
-      
-      if (existingPlans && existingPlans.length > 0) {
-        console.log('✅ Default workout data already exists');
-        return;
-      }
-      
-      console.log('📝 Creating default workout data...');
-      
-      // Create default exercises
-      const exercises = [
-        {
-          name: 'Push-ups',
-          category: 'strength',
-          reps: 10,
-          duration_seconds: null,
-          instructions: 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up to starting position.',
-          gif_url: 'https://media.giphy.com/media/ZD8ZjehSsLDZQRoJxW/giphy.gif'
-        },
-        {
-          name: 'Squats',
-          category: 'strength',
-          reps: 15,
-          duration_seconds: null,
-          instructions: 'Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and knees behind your toes. Return to standing.',
-          gif_url: 'https://media.giphy.com/media/1qfDU4MJv9xoGtRKvh/giphy.gif'
-        },
-        {
-          name: 'Plank',
-          category: 'core',
-          reps: null,
-          duration_seconds: 30,
-          instructions: 'Start in a push-up position but rest on your forearms. Keep your body in a straight line from head to heels. Hold this position.',
-          gif_url: 'https://media.giphy.com/media/3o6fJ5LANL0x31R1Ic/giphy.gif'
-        },
-        {
-          name: 'Jumping Jacks',
-          category: 'cardio',
-          reps: null,
-          duration_seconds: 30,
-          instructions: 'Stand with feet together and arms at your sides. Jump while spreading your legs shoulder-width apart and raising your arms overhead. Jump back to starting position.',
-          gif_url: 'https://media.giphy.com/media/3o6fJeWZrlAIyN1EKQ/giphy.gif'
-        }
-      ];
-      
-      // Insert exercises
-      for (const exercise of exercises) {
-        await supabase.from('exercises').upsert(exercise, { onConflict: 'name' });
-      }
-      
-      // Create default workout plan
-      const { data: planData } = await supabase
-        .from('workout_plans')
-        .upsert({
-          user_id: null,
-          title: 'Beginner Full Body',
-          description: 'Perfect for fitness beginners! A gentle introduction to exercise targeting all major muscle groups.',
-          duration_minutes: 15,
-          total_exercises: 4,
-          est_calories: 120
-        }, { onConflict: 'title' })
-        .select()
-        .single();
-      
-      if (planData) {
-        // Create workout day
-        const { data: dayData } = await supabase
-          .from('workout_days')
-          .upsert({
-            plan_id: planData.id,
-            day_number: 1,
-            title: 'Full Body Basics'
-          }, { onConflict: 'plan_id,day_number' })
-          .select()
-          .single();
-        
-        if (dayData) {
-          // Add exercises to day
-          const exerciseNames = ['Jumping Jacks', 'Push-ups', 'Squats', 'Plank'];
-          for (let i = 0; i < exerciseNames.length; i++) {
-            const { data: exerciseData } = await supabase
-              .from('exercises')
-              .select('id')
-              .eq('name', exerciseNames[i])
-              .single();
-            
-            if (exerciseData) {
-              await supabase
-                .from('workout_day_exercises')
-                .upsert({
-                  day_id: dayData.id,
-                  exercise_id: exerciseData.id,
-                  sort_order: i + 1
-                }, { onConflict: 'day_id,exercise_id' });
-            }
-          }
-        }
-      }
-      
-      console.log('✅ Default workout data created successfully');
-      
-    } catch (error) {
-      console.error('❌ Error initializing default data:', error);
-    }
-  },
-
-  // Plan management
+  // Plan management with timeout protection
   async getWorkoutPlans(userId?: string): Promise<WorkoutPlan[]> {
     try {
       console.log('🔍 getWorkoutPlans called with userId:', userId);
       
-      // Simplified query - just get all plans first
-      console.log('📊 Executing basic query...');
-      const { data, error } = await supabase
-        .from('workout_plans')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Create a timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Database query timeout after 10 seconds'));
+        }, 10000);
+      });
       
-      console.log('📊 Query result:', { data, error });
+      // Create the actual query promise
+      const queryPromise = (async () => {
+        console.log('📊 Executing workout plans query...');
+        
+        let query = supabase
+          .from('workout_plans')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        // Apply user filter if provided
+        if (userId) {
+          // Get both default plans (user_id is null) and user's custom plans
+          query = query.or(`user_id.is.null,user_id.eq.${userId}`);
+        } else {
+          // Only get default plans
+          query = query.is('user_id', null);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('❌ Database error:', error);
+          throw new Error(`Database error: ${error.message} (Code: ${error.code})`);
+        }
+        
+        console.log('✅ Query successful, found', data?.length || 0, 'plans');
+        return data || [];
+      })();
       
-      if (error) {
-        console.error('❌ Error fetching workout plans:', error);
-        throw new Error(`Database error: ${error.message}`);
-      }
+      // Race between query and timeout
+      const result = await Promise.race([queryPromise, timeoutPromise]);
       
-      if (!data) {
-        console.log('⚠️ No data returned from query');
-        return [];
-      }
+      console.log('✅ Returning', result.length, 'workout plans');
+      return result;
       
-      console.log('✅ Raw data from database:', data);
-      
-      // Filter based on user if needed
-      let filteredData = data;
-      if (userId) {
-        // Get both default plans (user_id is null) and user's custom plans
-        filteredData = data.filter(plan => plan.user_id === null || plan.user_id === userId);
-        console.log('🔍 Filtered data for user:', filteredData);
-      } else {
-        // Only get default plans
-        filteredData = data.filter(plan => plan.user_id === null);
-        console.log('🔍 Filtered default plans:', filteredData);
-      }
-      
-      console.log('✅ Returning plans:', filteredData);
-      return filteredData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error in getWorkoutPlans:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.message.includes('timeout')) {
+        throw new Error('Database connection timeout. Please check your internet connection and try again.');
+      } else if (error.message.includes('permission')) {
+        throw new Error('Permission denied. Please make sure you are logged in.');
+      } else if (error.code === 'PGRST116') {
+        throw new Error('Table not found. The database may need to be set up.');
+      } else {
+        throw new Error(`Failed to load workout plans: ${error.message}`);
+      }
     }
   },
 

@@ -5,7 +5,7 @@ import { guidedWorkoutService } from '../services/guidedWorkoutService';
 import WorkoutHistory from './WorkoutHistory';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import SimpleWorkoutTest from './SimpleWorkoutTest';
+import DatabaseHealthCheck from './DatabaseHealthCheck';
 
 interface GuidedWorkoutsViewProps {
   currentUserId: string | null;
@@ -28,7 +28,7 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
       
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Loading timeout - please check your internet connection')), 15000);
+        setTimeout(() => reject(new Error('Loading timeout - please check your internet connection and database setup')), 8000);
       });
       
       const loadPromise = guidedWorkoutService.getWorkoutPlans(currentUserId || undefined);
@@ -102,9 +102,9 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
           )}
         </div>
 
-        {/* Database Test Component */}
+        {/* Database Health Check */}
         <div className="mb-6">
-          <SimpleWorkoutTest />
+          <DatabaseHealthCheck />
         </div>
 
         {/* Workout Plans Grid */}
