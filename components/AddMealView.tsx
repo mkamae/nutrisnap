@@ -1,18 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MealEntry } from '../types';
 import { analyzeImageWithGemini } from '../services/geminiService';
+import { imageStorageService } from '../services/imageStorageService';
 import { fileToBase64 } from '../utils/helpers';
 import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
 import MealAnalysisTester from './MealAnalysisTester';
 import MealServiceTester from './MealServiceTester';
+import StorageTester from './StorageTester';
+import StorageSetupInstructions from './StorageSetupInstructions';
 
 interface AddMealViewProps {
   onConfirm: (meal: Omit<MealEntry, 'id' | 'created_at'>) => Promise<void>;
   onCancel: () => void;
+  currentUserId?: string | null;
 }
 
-const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
+const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentUserId }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +26,8 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,6 +131,12 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       setError("Please select an image first.");
       return;
     }
+    
+    if (!currentUserId) {
+      setError("Please log in to analyze meals.");
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setAnalysisResult(null);
@@ -139,7 +151,21 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       const result = await analyzeImageWithGemini(base64Image, imageFile.type);
       console.log('Analysis result:', result);
       setAnalysisResult(result);
-      setDebugInfo('Analysis completed successfully - ready to save meal');
+      
+      // Upload image to permanent storage after successful analysis
+      setDebugInfo('Analysis completed, uploading image...');
+      setIsUploading(true);
+      
+      const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
+      
+      if (uploadResult.success) {
+        setUploadedImageUrl(uploadResult.url!);
+        setDebugInfo('Analysis and image upload completed successfully - ready to save meal');
+        console.log('✅ Image uploaded to permanent storage:', uploadResult.url);
+      } else {
+        console.warn('⚠️ Image upload failed, will use temporary URL:', uploadResult.error);
+        setDebugInfo('Analysis completed, image upload failed - will use temporary storage');
+      }
       
     } catch (err: any) {
       console.error('Analysis error:', err);
@@ -147,6 +173,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       setDebugInfo(`Analysis failed: ${err.message}`);
     } finally {
       setIsLoading(false);
+      setIsUploading(false);
     }
   };
 
@@ -154,14 +181,15 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
     console.log('=== HANDLE CONFIRM DEBUG ===');
     console.log('Analysis result:', analysisResult);
     console.log('Preview URL:', previewUrl);
+    console.log('Uploaded image URL:', uploadedImageUrl);
     
     if (!analysisResult) {
       setError('No analysis result available. Please analyze an image first.');
       return;
     }
     
-    if (!previewUrl) {
-      setError('No image available. Please select an image first.');
+    if (!currentUserId) {
+      setError('No authenticated user found. Please log in.');
       return;
     }
     
@@ -180,6 +208,24 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
     setError(null);
     
     try {
+      let finalImageUrl = uploadedImageUrl;
+      
+      // If we don't have an uploaded URL but have an image file, upload it now
+      if (!finalImageUrl && imageFile) {
+        console.log('📸 Uploading image before saving meal...');
+        setDebugInfo('Uploading image...');
+        
+        const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
+        
+        if (!uploadResult.success) {
+          throw new Error(`Image upload failed: ${uploadResult.error}`);
+        }
+        
+        finalImageUrl = uploadResult.url!;
+        setUploadedImageUrl(finalImageUrl);
+        console.log('✅ Image uploaded successfully:', finalImageUrl);
+      }
+      
       // Ensure all numeric fields have proper values
       const meal: Omit<MealEntry, 'id' | 'created_at'> = {
         mealName: analysisResult.mealName.trim(),
@@ -188,7 +234,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
         carbs: Math.max(0, analysisResult.carbs || 0),
         fat: Math.max(0, analysisResult.fat || 0),
         portionSize: analysisResult.portionSize?.trim() || '1 serving',
-        imageUrl: previewUrl,
+        imageUrl: finalImageUrl || previewUrl, // Fallback to preview URL if upload fails
         date: new Date().toISOString().split('T')[0]
       };
       
@@ -250,6 +296,16 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
         {/* Meal Service Tester */}
         <div className="mb-6">
           <MealServiceTester />
+        </div>
+
+        {/* Storage Setup Instructions */}
+        <div className="mb-6">
+          <StorageSetupInstructions />
+        </div>
+
+        {/* Storage Tester */}
+        <div className="mb-6">
+          <StorageTester />
         </div>
 
         {/* Main Content */}
@@ -330,10 +386,10 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
                   </button>
                   <button
                     onClick={handleAnalyze}
-                    disabled={isLoading}
+                    disabled={isLoading || isUploading}
                     className="btn-primary"
                   >
-                    {isLoading ? 'Analyzing...' : 'Analyze Image'}
+                    {isLoading ? 'Analyzing...' : isUploading ? 'Uploading...' : 'Analyze Image'}
                   </button>
                 </div>
               </div>
@@ -344,6 +400,33 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
           {analysisResult && (
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Analysis Results</h3>
+              
+              {/* Image Upload Status */}
+              <div className="mb-4 p-3 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Image Storage:
+                  </span>
+                  <div className="flex items-center">
+                    {uploadedImageUrl ? (
+                      <div className="flex items-center text-green-600">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm">Uploaded to permanent storage</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-yellow-600">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm">Using temporary storage</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-4">
                 {/* Display Analysis Results (Read-only) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

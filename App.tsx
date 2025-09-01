@@ -319,6 +319,7 @@ function App() {
                 <AddMealView
                   onConfirm={addMealEntry}
                   onCancel={() => window.history.back()}
+                  currentUserId={currentUserId}
                 />
               } 
             />
