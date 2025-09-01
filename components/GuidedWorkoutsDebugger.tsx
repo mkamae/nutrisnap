@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseService';
+import { guidedWorkoutService } from '../services/guidedWorkoutService';
 
 const GuidedWorkoutsDebugger: React.FC = () => {
   const [results, setResults] = useState<any>(null);
@@ -94,7 +95,6 @@ const GuidedWorkoutsDebugger: React.FC = () => {
       // Test 5: Full service test
       console.log('🔍 Testing guidedWorkoutService...');
       try {
-        const { guidedWorkoutService } = await import('../services/guidedWorkoutService');
         const plans = await guidedWorkoutService.getWorkoutPlans();
         diagnostics.tests.service_test = { 
           success: true, 
