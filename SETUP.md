@@ -5,9 +5,9 @@
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-SUPABASE_URL=https://adxtkbhtezlzuydrzmcx.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0
-GEMINI_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
+SUPABASE_URL=YOUR_SUPABASE_URL_HERE
+SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY_HERE
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 ## Supabase Database Setup

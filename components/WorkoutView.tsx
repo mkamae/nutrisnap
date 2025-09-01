@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Workout } from '../types';
+import { Workout } from '../types';
 import { workoutService } from '../services/supabaseService';
 
 interface WorkoutViewProps {
-  profile: UserProfile | null;
+  currentUserId: string | null;
   workouts: Workout[];
   onWorkoutUpdate: (workouts: Workout[]) => void;
 }
 
 const WorkoutView: React.FC<WorkoutViewProps> = ({ 
-  profile, 
+  currentUserId, 
   workouts, 
   onWorkoutUpdate
 }) => {
@@ -27,18 +27,29 @@ const WorkoutView: React.FC<WorkoutViewProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.user_id) return;
+    console.log('=== WORKOUT SUBMISSION DEBUG ===');
+    console.log('Current user ID:', currentUserId);
+    console.log('Workout form data:', workoutForm);
+    console.log('Is editing:', !!editingWorkout);
+    
+    if (!currentUserId) {
+      setError('No user ID found. Please log in again.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
       if (editingWorkout) {
+        console.log('Updating existing workout:', editingWorkout.id);
         // Update existing workout
         const updatedWorkout = await workoutService.updateWorkout({
           ...editingWorkout,
           ...workoutForm
-        }, profile.user_id);
+        }, currentUserId);
+        
+        console.log('Workout updated successfully:', updatedWorkout);
         
         const updatedWorkouts = workouts.map(w => 
           w.id === updatedWorkout.id ? updatedWorkout : w
@@ -46,8 +57,17 @@ const WorkoutView: React.FC<WorkoutViewProps> = ({
         onWorkoutUpdate(updatedWorkouts);
         setEditingWorkout(null);
       } else {
+        console.log('Creating new workout...');
         // Create new workout
-        const newWorkout = await workoutService.createWorkout(workoutForm, profile.user_id);
+        const workoutData = {
+          ...workoutForm,
+          user_id: currentUserId
+        };
+        console.log('Workout data to create:', workoutData);
+        
+        const newWorkout = await workoutService.createWorkout(workoutData, currentUserId);
+        console.log('Workout created successfully:', newWorkout);
+        
         onWorkoutUpdate([newWorkout, ...workouts]);
       }
 
@@ -60,6 +80,10 @@ const WorkoutView: React.FC<WorkoutViewProps> = ({
         notes: ''
       });
       setIsAddingWorkout(false);
+      setError(null);
+      
+      console.log('Workout form submitted successfully!');
+      
     } catch (err: any) {
       console.error('Failed to save workout:', err);
       setError(err.message || 'Failed to save workout');
@@ -81,10 +105,10 @@ const WorkoutView: React.FC<WorkoutViewProps> = ({
   };
 
   const handleDelete = async (workoutId: string) => {
-    if (!profile?.user_id || !confirm('Are you sure you want to delete this workout?')) return;
+    if (!currentUserId || !confirm('Are you sure you want to delete this workout?')) return;
 
     try {
-      await workoutService.deleteWorkout(workoutId, profile.user_id);
+      await workoutService.deleteWorkout(workoutId, currentUserId);
       const updatedWorkouts = workouts.filter(w => w.id !== workoutId);
       onWorkoutUpdate(updatedWorkouts);
     } catch (err: any) {

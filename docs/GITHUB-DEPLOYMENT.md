@@ -13,9 +13,9 @@ Your NutriSnap application is now available at: [https://github.com/mkamae/nutri
 3. **Import your repository**: `mkamae/nutrisnap`
 4. **Configure environment variables**:
    ```env
-   VITE_SUPABASE_URL=https://adxtkbhtezlzuydrzmcx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0
-   VITE_GEMINI_API_KEY=AIzaSyD1F8_nwp5dz9KG3RtHe12iHYNjvwSKizs
+   VITE_SUPABASE_URL=YOUR_SUPABASE_URL_HERE
+   VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY_HERE
+   VITE_GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
    ```
 5. **Click "Deploy"**
 

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProfile, MealEntry, Workout } from './types';
-import { authService, profileService, mealService, workoutService } from './services/supabaseService';
 import { supabase } from './services/supabaseService';
+import { mealService } from './services/supabaseService';
+import { workoutService } from './services/supabaseService';
+import { MealEntry, Workout } from './types';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
-
 import WorkoutView from './components/WorkoutView';
 import BottomNav from './components/BottomNav';
 
@@ -15,7 +15,6 @@ import BottomNav from './components/BottomNav';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,13 +25,13 @@ function App() {
     const initializeApp = async () => {
       try {
         console.log('🔍 Initializing app...');
-        const user = await authService.getCurrentUser();
-        console.log('👤 Current user:', user ? user.id : 'No user');
+        const user = await supabase.auth.getUser();
+        console.log('👤 Current user:', user.data.user ? user.data.user.id : 'No user');
         
-        if (user) {
-          setCurrentUserId(user.id);
+        if (user.data.user) {
+          setCurrentUserId(user.data.user.id);
           setIsAuthenticated(true);
-          await loadUserData(user.id);
+          await loadUserData(user.data.user.id);
         } else {
           console.log('🚫 No authenticated user found, showing auth view');
         }
@@ -59,7 +58,7 @@ function App() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('🔄 Auth state changed:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN' && session?.user) {
           setCurrentUserId(session.user.id);
@@ -68,10 +67,8 @@ function App() {
         } else if (event === 'SIGNED_OUT') {
           setCurrentUserId(null);
           setIsAuthenticated(false);
-          setUserProfile(null);
           setMealEntries([]);
           setWorkouts([]);
-  
         }
       }
     );
@@ -81,32 +78,22 @@ function App() {
 
   const loadUserData = async (userId: string) => {
     try {
-      console.log('🔄 Starting to load user data for:', userId);
+      console.log('📊 Loading user data for:', userId);
       
-      // Load profile
-      console.log('👤 Loading profile...');
-      const profile = await profileService.getProfile(userId);
-      if (profile) {
-        setUserProfile(profile);
-        console.log('✅ Profile loaded from database:', profile);
-      } else {
-        console.log('❌ No profile found, user will need to create one from Profile page');
-      }
-
       // Load meals
       console.log('🍽️ Loading meals...');
       const meals = await mealService.getMeals(userId);
       setMealEntries(meals);
       console.log('✅ Meals loaded:', meals.length);
-
+      
       // Load workouts
       console.log('💪 Loading workouts...');
-      const workouts = await workoutService.getWorkouts(userId);
-      setWorkouts(workouts);
-      console.log('✅ Workouts loaded:', workouts.length);
-
-      console.log('🎉 User data loading complete!');
-
+      const userWorkouts = await workoutService.getWorkouts(userId);
+      setWorkouts(userWorkouts);
+      console.log('✅ Workouts loaded:', userWorkouts.length);
+      
+      console.log('🎉 User data loading completed');
+      
     } catch (error) {
       console.error('❌ Error loading user data:', error);
     }
@@ -116,19 +103,19 @@ function App() {
     try {
       let result;
       if (isSignUp) {
-        result = await authService.signUp(email, password);
+        result = await supabase.auth.signUp({ email, password });
       } else {
-        result = await authService.signIn(email, password);
+        result = await supabase.auth.signInWithPassword({ email, password });
       }
 
       if (result.error) {
         throw new Error(result.error.message);
       }
 
-      if (result.user) {
-        setCurrentUserId(result.user.id);
+      if (result.data.user) {
+        setCurrentUserId(result.data.user.id);
         setIsAuthenticated(true);
-        await loadUserData(result.user.id);
+        await loadUserData(result.data.user.id);
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -138,7 +125,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await authService.signOut();
+      await supabase.auth.signOut();
       // Auth state change listener will handle clearing the state
     } catch (error) {
       console.error('Error during logout:', error);
@@ -193,40 +180,6 @@ function App() {
       
     } catch (error) {
       console.error('Error saving meal:', error);
-      throw error;
-    }
-  };
-
-  const handleProfileUpdate = async (updatedProfile: UserProfile) => {
-    if (!currentUserId) {
-      console.error('No current user ID found for profile update');
-      return;
-    }
-
-    try {
-      console.log('=== PROFILE UPDATE DEBUG ===');
-      console.log('Updating profile:', updatedProfile);
-      console.log('Current user ID:', currentUserId);
-      
-      const savedProfile = await profileService.upsertProfile(updatedProfile, currentUserId);
-      console.log('Profile saved to DB:', savedProfile);
-      
-      // Update the state with the saved profile
-      setUserProfile(savedProfile);
-      console.log('User profile state updated:', savedProfile);
-      
-      // Also update localStorage to persist the profile
-      if (savedProfile) {
-        localStorage.setItem(`user_profile_${currentUserId}`, JSON.stringify(savedProfile));
-        console.log('Profile saved to localStorage');
-      }
-      
-      // Verify the state was updated correctly
-      console.log('Profile update completed successfully');
-      
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // Re-throw the error so the UI can handle it
       throw error;
     }
   };
@@ -294,14 +247,14 @@ function App() {
 
   // Calculate net calories (consumed - burned)
   const netCalories = todaysEntries.totals.calories - todaysWorkoutCalories;
-  const caloriesLeft = (userProfile?.dailyCalorieGoal || 2500) - netCalories;
+  const caloriesLeft = 2500 - netCalories; // Default daily calorie goal
 
   // Debug logging
   console.log('🔍 APP STATE DEBUG:', {
     isLoading,
     isAuthenticated,
     currentUserId,
-    userProfile: userProfile?.name,
+    userProfile: null, // Removed userProfile
     mealEntriesCount: mealEntries.length,
     workoutsCount: workouts.length
   });
@@ -353,7 +306,7 @@ function App() {
               element={
                 <DashboardView
                   entries={todaysEntries.entries}
-                  profile={userProfile}
+                  profile={null}
                   workoutCalories={todaysWorkoutCalories}
                   netCalories={netCalories}
                   caloriesLeft={caloriesLeft}
@@ -373,9 +326,7 @@ function App() {
               path="/profile" 
               element={
                 <ProfileView
-                  profile={userProfile}
                   onLogout={handleLogout}
-                  onProfileUpdate={handleProfileUpdate}
                 />
               } 
             />
@@ -383,7 +334,7 @@ function App() {
               path="/workouts" 
               element={
                 <WorkoutView
-                  profile={userProfile}
+                  currentUserId={currentUserId}
                   workouts={workouts}
                   onWorkoutUpdate={setWorkouts}
                 />

@@ -107,3 +107,14 @@ temp/
 
 # Local Netlify folder
 .netlify
+# Additional security
+*.sql
+*.zip
+*.env.backup
+
+# Temporary files
+tatus
+
+# Audit and fix files
+SITE-AUDIT-REPORT.md
+fix-before-push.sh

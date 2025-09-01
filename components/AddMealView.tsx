@@ -138,6 +138,13 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
       console.log('Analysis result:', result);
       setAnalysisResult(result);
       setDebugInfo('Analysis completed successfully');
+      
+      // Auto-save the meal after successful analysis
+      if (result) {
+        setDebugInfo('Auto-saving meal...');
+        await handleConfirm();
+      }
+      
     } catch (err: any) {
       console.error('Analysis error:', err);
       setError(err.message || "An unknown error occurred.");
@@ -341,76 +348,59 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Analysis Results</h3>
               <div className="space-y-4">
+                {/* Display Analysis Results (Read-only) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Meal Name</label>
-                    <input
-                      type="text"
-                      value={analysisResult.mealName || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, mealName: e.target.value }))}
-                      className="form-input"
-                      placeholder="Enter meal name"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.mealName || 'Analyzed meal'}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Portion Size</label>
-                    <input
-                      type="text"
-                      value={analysisResult.portionSize || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, portionSize: e.target.value }))}
-                      className="form-input"
-                      placeholder="e.g., 1 cup, 200g"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.portionSize || '1 serving'}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Calories</label>
-                    <input
-                      type="number"
-                      value={analysisResult.calories || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, calories: parseInt(e.target.value) || 0 }))}
-                      className="form-input"
-                      placeholder="0"
-                      min="0"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.calories || 0} kcal
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Protein (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={analysisResult.protein || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, protein: parseFloat(e.target.value) || 0 }))}
-                      className="form-input"
-                      placeholder="0"
-                      min="0"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.protein || 0}g
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Carbs (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={analysisResult.carbs || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, carbs: parseFloat(e.target.value) || 0 }))}
-                      className="form-input"
-                      placeholder="0"
-                      min="0"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.carbs || 0}g
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Fat (g)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={analysisResult.fat || ''}
-                      onChange={(e) => setAnalysisResult(prev => ({ ...prev, fat: parseFloat(e.target.value) || 0 }))}
-                      className="form-input"
-                      placeholder="0"
-                      min="0"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {analysisResult.fat || 0}g
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
+                {/* Action Buttons */}
                 <div className="flex space-x-3 pt-4">
                   <button
                     onClick={onCancel}
@@ -423,7 +413,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel }) => {
                     disabled={isLoading || isConfirming}
                     className="btn-primary"
                   >
-                    {isConfirming ? 'Adding...' : 'Add Meal'}
+                    {isConfirming ? 'Saving...' : 'Save Meal'}
                   </button>
                 </div>
               </div>
