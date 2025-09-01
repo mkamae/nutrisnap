@@ -5,7 +5,6 @@ import { guidedWorkoutService } from '../services/guidedWorkoutService';
 import WorkoutHistory from './WorkoutHistory';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import DatabaseDebug from './DatabaseDebug';
 
 interface GuidedWorkoutsViewProps {
   currentUserId: string | null;
@@ -24,7 +23,9 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Loading workout plans for user:', currentUserId);
       const plans = await guidedWorkoutService.getWorkoutPlans(currentUserId || undefined);
+      console.log('Loaded workout plans:', plans);
       setWorkoutPlans(plans);
     } catch (err: any) {
       console.error('Error loading workout plans:', err);
@@ -71,14 +72,25 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
           </p>
         </div>
 
-        {/* Database Debug Tool */}
-        <div className="mb-8">
-          <DatabaseDebug />
-        </div>
-
         {/* Workout History */}
         <div className="mb-8">
           <WorkoutHistory currentUserId={currentUserId} />
+        </div>
+
+        {/* Debug Info */}
+        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+          <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Debug Info:</h3>
+          <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            Loading: {isLoading ? 'Yes' : 'No'} | 
+            Error: {error || 'None'} | 
+            Plans Count: {workoutPlans.length} |
+            User ID: {currentUserId || 'None'}
+          </p>
+          {workoutPlans.length > 0 && (
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+              Plans: {workoutPlans.map(p => p.title).join(', ')}
+            </p>
+          )}
         </div>
 
         {/* Workout Plans Grid */}
