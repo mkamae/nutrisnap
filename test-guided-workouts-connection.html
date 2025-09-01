@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Guided Workouts Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Guided Workouts Connection Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const supabaseUrl = 'https://adxtkbhtezlzuydrzmcx.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function testConnection() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                // Test 1: Check workout_plans table
+                console.log('Testing workout_plans table...');
+                const { data: plans, error: plansError } = await supabase
+                    .from('workout_plans')
+                    .select('*')
+                    .limit(5);
+                
+                if (plansError) {
+                    results.innerHTML += `<p style="color: red;">❌ workout_plans error: ${plansError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p style="color: green;">✅ workout_plans: Found ${plans.length} plans</p>`;
+                    if (plans.length > 0) {
+                        results.innerHTML += `<pre>${JSON.stringify(plans, null, 2)}</pre>`;
+                    }
+                }
+                
+                // Test 2: Check exercises table
+                console.log('Testing exercises table...');
+                const { data: exercises, error: exercisesError } = await supabase
+                    .from('exercises')
+                    .select('*')
+                    .limit(5);
+                
+                if (exercisesError) {
+                    results.innerHTML += `<p style="color: red;">❌ exercises error: ${exercisesError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p style="color: green;">✅ exercises: Found ${exercises.length} exercises</p>`;
+                }
+                
+                // Test 3: Check workout_days table
+                console.log('Testing workout_days table...');
+                const { data: days, error: daysError } = await supabase
+                    .from('workout_days')
+                    .select('*')
+                    .limit(5);
+                
+                if (daysError) {
+                    results.innerHTML += `<p style="color: red;">❌ workout_days error: ${daysError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p style="color: green;">✅ workout_days: Found ${days.length} days</p>`;
+                }
+                
+                // Test 4: Check workout_day_exercises table
+                console.log('Testing workout_day_exercises table...');
+                const { data: dayExercises, error: dayExercisesError } = await supabase
+                    .from('workout_day_exercises')
+                    .select('*')
+                    .limit(5);
+                
+                if (dayExercisesError) {
+                    results.innerHTML += `<p style="color: red;">❌ workout_day_exercises error: ${dayExercisesError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p style="color: green;">✅ workout_day_exercises: Found ${dayExercises.length} assignments</p>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">❌ General error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test on page load
+        testConnection();
+    </script>
+</body>
+</html>

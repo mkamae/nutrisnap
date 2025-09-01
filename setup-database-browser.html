@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Guided Workouts Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Setup Guided Workouts Database</h1>
+    <p>This will create the necessary tables and data for guided workouts.</p>
+    
+    <button onclick="setupDatabase()">Setup Database</button>
+    <button onclick="testConnection()">Test Connection</button>
+    
+    <div id="log"></div>
+
+    <script>
+        const supabaseUrl = 'https://adxtkbhtezlzuydrzmcx.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeHRrYmh0ZXpsenV5ZHJ6bWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMzc0NjIsImV4cCI6MjA3MDkxMzQ2Mn0.IEQZLSHdJ8nyz8-Hc8wxgHhPHu7slcL3vkeFSBjKsx0';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const p = document.createElement('p');
+            p.className = `log ${type}`;
+            p.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logDiv.appendChild(p);
+            console.log(message);
+        }
+        
+        async function testConnection() {
+            log('Testing Supabase connection...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('workout_plans')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    log(`Connection test failed: ${error.message}`, 'error');
+                } else {
+                    log('Connection successful!', 'success');
+                }
+            } catch (error) {
+                log(`Connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function setupDatabase() {
+            log('Starting database setup...', 'info');
+            
+            try {
+                // 1. Create exercises
+                log('Creating exercises...', 'info');
+                
+                const exercises = [
+                    {
+                        name: 'Push-ups',
+                        category: 'strength',
+                        reps: 10,
+                        duration_seconds: null,
+                        instructions: 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up to starting position.',
+                        gif_url: 'https://media.giphy.com/media/ZD8ZjehSsLDZQRoJxW/giphy.gif'
+                    },
+                    {
+                        name: 'Squats',
+                        category: 'strength',
+                        reps: 15,
+                        duration_seconds: null,
+                        instructions: 'Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and knees behind your toes. Return to standing.',
+                        gif_url: 'https://media.giphy.com/media/1qfDU4MJv9xoGtRKvh/giphy.gif'
+                    },
+                    {
+                        name: 'Plank',
+                        category: 'core',
+                        reps: null,
+                        duration_seconds: 30,
+                        instructions: 'Start in a push-up position but rest on your forearms. Keep your body in a straight line from head to heels. Hold this position.',
+                        gif_url: 'https://media.giphy.com/media/3o6fJ5LANL0x31R1Ic/giphy.gif'
+                    },
+                    {
+                        name: 'Jumping Jacks',
+                        category: 'cardio',
+                        reps: null,
+                        duration_seconds: 30,
+                        instructions: 'Stand with feet together and arms at your sides. Jump while spreading your legs shoulder-width apart and raising your arms overhead. Jump back to starting position.',
+                        gif_url: 'https://media.giphy.com/media/3o6fJeWZrlAIyN1EKQ/giphy.gif'
+                    }
+                ];
+                
+                for (const exercise of exercises) {
+                    const { error } = await supabase
+                        .from('exercises')
+                        .upsert(exercise, { onConflict: 'name' });
+                    
+                    if (error) {
+                        log(`Error creating exercise ${exercise.name}: ${error.message}`, 'error');
+                    } else {
+                        log(`Created exercise: ${exercise.name}`, 'success');
+                    }
+                }
+                
+                // 2. Create workout plan
+                log('Creating workout plan...', 'info');
+                
+                const { data: planData, error: planError } = await supabase
+                    .from('workout_plans')
+                    .upsert({
+                        user_id: null,
+                        title: 'Beginner Full Body',
+                        description: 'Perfect for fitness beginners! A gentle introduction to exercise targeting all major muscle groups.',
+                        duration_minutes: 15,
+                        total_exercises: 4,
+                        est_calories: 120
+                    }, { onConflict: 'title' })
+                    .select()
+                    .single();
+                
+                if (planError) {
+                    log(`Error creating workout plan: ${planError.message}`, 'error');
+                    return;
+                }
+                
+                log('Created workout plan: Beginner Full Body', 'success');
+                
+                // 3. Create workout day
+                log('Creating workout day...', 'info');
+                
+                const { data: dayData, error: dayError } = await supabase
+                    .from('workout_days')
+                    .upsert({
+                        plan_id: planData.id,
+                        day_number: 1,
+                        title: 'Full Body Basics'
+                    }, { onConflict: 'plan_id,day_number' })
+                    .select()
+                    .single();
+                
+                if (dayError) {
+                    log(`Error creating workout day: ${dayError.message}`, 'error');
+                    return;
+                }
+                
+                log('Created workout day: Full Body Basics', 'success');
+                
+                // 4. Add exercises to day
+                log('Adding exercises to day...', 'info');
+                
+                const exerciseNames = ['Jumping Jacks', 'Push-ups', 'Squats', 'Plank'];
+                for (let i = 0; i < exerciseNames.length; i++) {
+                    const exerciseName = exerciseNames[i];
+                    
+                    // Get exercise ID
+                    const { data: exerciseData, error: exerciseError } = await supabase
+                        .from('exercises')
+                        .select('id')
+                        .eq('name', exerciseName)
+                        .single();
+                    
+                    if (exerciseError) {
+                        log(`Error finding exercise ${exerciseName}: ${exerciseError.message}`, 'error');
+                        continue;
+                    }
+                    
+                    // Add to day
+                    const { error: assignError } = await supabase
+                        .from('workout_day_exercises')
+                        .upsert({
+                            day_id: dayData.id,
+                            exercise_id: exerciseData.id,
+                            sort_order: i + 1
+                        }, { onConflict: 'day_id,exercise_id' });
+                    
+                    if (assignError) {
+                        log(`Error assigning exercise ${exerciseName}: ${assignError.message}`, 'error');
+                    } else {
+                        log(`Added exercise: ${exerciseName}`, 'success');
+                    }
+                }
+                
+                log('Database setup completed successfully!', 'success');
+                log('You can now refresh your app and the guided workouts should load.', 'info');
+                
+            } catch (error) {
+                log(`Setup failed: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
