@@ -310,11 +310,6 @@ function App() {
                   workoutCalories={todaysWorkoutCalories}
                   netCalories={netCalories}
                   caloriesLeft={caloriesLeft}
-                  allMealEntries={mealEntries}
-                  currentUserId={currentUserId}
-                  onMealAdded={(meal) => {
-                    setMealEntries(prev => [meal, ...prev]);
-                  }}
                 />
               } 
             />
