@@ -27,6 +27,47 @@ console.log('Key length:', supabaseAnonKey.length);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Generic timeout wrapper for any Supabase query promise
+export async function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs: number = 10000): Promise<T> {
+  const start = Date.now();
+  try {
+    const result = await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs))
+    ]);
+    const duration = Date.now() - start;
+    console.log(`⏱️ ${label} completed in ${duration}ms`);
+    return result as T;
+  } catch (err) {
+    const duration = Date.now() - start;
+    console.error(`⏱️ ${label} failed after ${duration}ms:`, err);
+    throw err;
+  }
+}
+
+// Lightweight connectivity health check
+export const healthCheckSupabase = async () => {
+  try {
+    console.log('🩺 Running Supabase health check...');
+    // Use a tiny query on meals table by default
+    const result = await withTimeout(
+      (async () => await supabase.from('meals').select('id').limit(1))(),
+      'HealthCheck: select meals id',
+      8000
+    );
+    const { error } = result as any;
+    if (error) {
+      console.warn('⚠️ Health check reported error:', error.message);
+      return { ok: false, error: error.message };
+    }
+    console.log('✅ Supabase health check OK');
+    return { ok: true };
+  } catch (e: any) {
+    console.error('❌ Supabase unreachable:', e.message);
+    return { ok: false, error: e.message };
+  }
+};
+
 // Test connection function with timeout
 export const testSupabaseConnection = async () => {
   try {
@@ -66,21 +107,25 @@ export const mealService = {
     try {
       console.log('🍽️ Creating meal:', { mealData, userId });
       
-      const { data, error } = await supabase
-        .from('meals')
-        .insert({
-          user_id: userId,
-          mealname: mealData.mealname,
-          portionsize: mealData.portionsize,
-          imageurl: mealData.imageurl,
-          calories: mealData.calories,
-          protein: mealData.protein,
-          carbs: mealData.carbs,
-          fat: mealData.fat,
-          date: mealData.date
-        })
-        .select()
-        .single();
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('meals')
+          .insert({
+            user_id: userId,
+            mealname: mealData.mealname,
+            portionsize: mealData.portionsize,
+            imageurl: mealData.imageurl,
+            calories: mealData.calories,
+            protein: mealData.protein,
+            carbs: mealData.carbs,
+            fat: mealData.fat,
+            date: mealData.date
+          })
+          .select()
+          .single())(),
+        'Insert meal',
+        10000
+      ) as any;
 
       if (error) {
         console.error('❌ Error creating meal:', error);
@@ -97,11 +142,15 @@ export const mealService = {
 
   async getMeals(userId: string): Promise<MealEntry[]> {
     try {
-      const { data, error } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('meals')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false }))(),
+        'Get meals',
+        10000
+      ) as any;
 
       if (error) {
         console.error('Error fetching meals:', error);

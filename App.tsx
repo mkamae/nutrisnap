@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase, mealService, workoutSessionService } from './services/supabaseService';
+import { supabase, mealService, workoutSessionService, healthCheckSupabase } from './services/supabaseService';
 import { MealEntry, WorkoutSession } from './types';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
@@ -25,6 +25,11 @@ function App() {
     const initializeApp = async () => {
       try {
         console.log('🔍 Initializing app...');
+        // Health check
+        const hc = await healthCheckSupabase();
+        if (!hc.ok) {
+          console.warn('⚠️ Supabase health check failed:', hc.error);
+        }
         const user = await supabase.auth.getUser();
         console.log('👤 Current user:', user.data.user ? user.data.user.id : 'No user');
         
