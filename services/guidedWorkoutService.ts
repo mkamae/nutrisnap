@@ -7,10 +7,10 @@ export const guidedWorkoutService = {
     try {
       console.log('🔍 Loading workout plans for user:', userId);
       
-      // First check if the table exists by trying a simple query
+      // Fast existence check with minimal payload
       const { data: tableCheck, error: tableError } = await supabase
         .from('workout_plans')
-        .select('count')
+        .select('id')
         .limit(1);
       
       if (tableError) {
@@ -20,8 +20,9 @@ export const guidedWorkoutService = {
       
       let query = supabase
         .from('workout_plans')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('id,user_id,title,description,duration_minutes,total_exercises,est_calories,created_at')
+        .order('created_at', { ascending: false })
+        .limit(20);
       
       if (userId) {
         // Get both default plans (user_id is null) and user's custom plans
