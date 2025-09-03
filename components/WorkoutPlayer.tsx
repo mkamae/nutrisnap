@@ -25,6 +25,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({ currentUserId }) => {
   const [exercises, setExercises] = useState<(WorkoutDayExercise & { exercise: Exercise })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showStartOverlay, setShowStartOverlay] = useState(true);
 
   // Mobile optimizations
   const { requestWakeLock, releaseWakeLock, isSupported: wakeLockSupported } = useWakeLock();
@@ -100,6 +101,7 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({ currentUserId }) => {
   const handlePlay = useCallback(() => {
     if (!playerState) return;
     setPlayerState(prev => prev ? { ...prev, isPlaying: true, isPaused: false } : null);
+    setShowStartOverlay(false);
   }, [playerState]);
 
   const handlePause = useCallback(() => {
@@ -238,7 +240,14 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({ currentUserId }) => {
       />
 
       {/* Main Exercise Display */}
-      <div className="exercise-display flex-1 flex flex-col items-center justify-center p-6">
+      <div className="exercise-display flex-1 flex flex-col items-center justify-center p-6 relative">
+        {showStartOverlay && (
+          <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-10 p-6">
+            <h2 className="text-2xl font-bold mb-4">Ready to start?</h2>
+            <p className="text-gray-300 mb-6 text-center max-w-md">Follow each step. Timed exercises will run automatically. Swipe or tap Next to proceed.</p>
+            <button onClick={handlePlay} className="btn-primary px-8 py-3 text-lg">START</button>
+          </div>
+        )}
         {currentExercise && (
           <>
             {/* Exercise Info */}

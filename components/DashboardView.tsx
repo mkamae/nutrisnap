@@ -112,15 +112,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="space-y-3">
             {entries.map(entry => (
               <div key={entry.id} className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <img 
-                  src={entry.imageUrl} 
-                  alt={entry.mealName} 
-                  className="w-16 h-16 rounded-lg object-cover mr-4" 
-                />
+                {entry.imageurl ? (
+                  <img 
+                    src={entry.imageurl} 
+                    alt={entry.mealname}
+                    className="w-16 h-16 rounded-lg object-cover mr-4" 
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-600 mr-4 flex items-center justify-center text-gray-400">
+                    📷
+                  </div>
+                )}
                 <div className="flex-1">
-                  <p className="font-bold">{entry.mealName}</p>
+                  <p className="font-bold">{entry.mealname}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {entry.calories} kcal • {entry.portionSize}
+                    {entry.calories} kcal{entry.portionsize ? ` • ${entry.portionsize}` : ''}
                   </p>
                 </div>
               </div>

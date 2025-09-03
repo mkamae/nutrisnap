@@ -6,7 +6,9 @@ import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
-import EnhancedGuidedWorkoutsView from './components/EnhancedGuidedWorkoutsView';
+import GuidedWorkoutsView from './components/GuidedWorkoutsView';
+import WorkoutPlanDetail from './components/WorkoutPlanDetail';
+import WorkoutPlayer from './components/WorkoutPlayer';
 import BottomNav from './components/BottomNav';
 
 
@@ -283,11 +285,26 @@ function App() {
               } 
             />
             <Route 
-              path="/workouts" 
+              path="/guided-workouts" 
               element={
-                <EnhancedGuidedWorkoutsView
+                <GuidedWorkoutsView
                   currentUserId={currentUserId}
-                  onWorkoutComplete={handleWorkoutComplete}
+                />
+              } 
+            />
+            <Route 
+              path="/guided-workouts/plan/:planId" 
+              element={
+                <WorkoutPlanDetail
+                  currentUserId={currentUserId}
+                />
+              } 
+            />
+            <Route 
+              path="/guided-workouts/player/:planId/:dayId" 
+              element={
+                <WorkoutPlayer
+                  currentUserId={currentUserId}
                 />
               } 
             />

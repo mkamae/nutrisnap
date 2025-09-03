@@ -151,10 +151,15 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       
       // Upload image to permanent storage after successful analysis
       setIsUploading(true);
+      console.log('🪣 Ensuring storage bucket exists before upload...');
+      await imageStorageService.ensureStorageBucket();
       const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
       
       if (uploadResult.success) {
         setUploadedImageUrl(uploadResult.url!);
+        console.log('✅ Image uploaded. URL:', uploadResult.url);
+      } else {
+        console.warn('⚠️ Image upload reported failure:', uploadResult.error);
       }
       
     } catch (err: any) {
@@ -196,6 +201,8 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       
       // If we don't have an uploaded URL but have an image file, upload it now
       if (!finalImageUrl && imageFile) {
+        console.log('📤 Uploading image before saving meal...');
+        await imageStorageService.ensureStorageBucket();
         const uploadResult = await imageStorageService.uploadImage(imageFile, currentUserId);
         
         if (!uploadResult.success) {
@@ -204,6 +211,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         
         finalImageUrl = uploadResult.url!;
         setUploadedImageUrl(finalImageUrl);
+        console.log('✅ Image uploaded before save. URL:', finalImageUrl);
       }
       
       // Ensure all numeric fields have proper values and correct DB field names
@@ -219,8 +227,10 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         date: new Date().toISOString().split('T')[0]
       };
       
-      // Call the parent's onConfirm function
+      // Call the parent's onConfirm function (persists analysis + image URL)
+      console.log('📝 Saving meal to database:', meal);
       await onConfirm(meal);
+      console.log('✅ Meal saved successfully');
       
       // Show success state briefly, then navigate back
       setIsSuccess(true);

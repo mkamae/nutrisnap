@@ -27,7 +27,7 @@ const BottomNav: React.FC = () => {
       color: 'text-green-600'
     },
     {
-      id: '/workouts',
+      id: '/guided-workouts',
       label: 'Workouts',
       icon: ChartBarIcon,
       color: 'text-purple-600'
