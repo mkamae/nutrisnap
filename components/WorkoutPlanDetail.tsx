@@ -149,7 +149,7 @@ const WorkoutPlanDetail: React.FC<WorkoutPlanDetailProps> = ({ currentUserId }) 
                       Day {day.day_number}: {day.title || 'Workout'}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {dayExercises[day.id]?.length || 0} exercises
+                      {(day.total_duration_minutes || 0) > 0 ? `${day.total_duration_minutes} min • ` : ''}{dayExercises[day.id]?.length || 0} exercises
                     </p>
                   </div>
                   <svg 
@@ -165,10 +165,24 @@ const WorkoutPlanDetail: React.FC<WorkoutPlanDetailProps> = ({ currentUserId }) 
                 </div>
               </button>
 
-              {/* Day Exercises */}
+              {/* Day Sections and Exercises */}
               {expandedDay === day.id && (
                 <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-6">
+                    {/* Sections Overview */}
+                    {day.sections && day.sections.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {day.sections.map((section, idx) => (
+                          <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                            <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">{section.type}</div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{section.title}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">{section.duration_minutes} min • {section.steps.length} steps</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Exercise List */}
                     <div className="grid gap-4">
                       {dayExercises[day.id]?.map((dayExercise, index) => (
                         <ExerciseCard 
@@ -178,7 +192,7 @@ const WorkoutPlanDetail: React.FC<WorkoutPlanDetailProps> = ({ currentUserId }) 
                         />
                       ))}
                     </div>
-                    
+
                     {/* Start Day Button */}
                     <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <button 

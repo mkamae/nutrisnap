@@ -220,6 +220,10 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({ currentUserId }) => {
         <div className="text-center">
           <h1 className="text-lg font-semibold">{plan.title}</h1>
           <p className="text-sm text-gray-400">Day {day.day_number}: {day.title}</p>
+          <p className="text-[11px] text-gray-400 mt-1">
+            {day.workout_type ? `${day.workout_type} • ` : ''}
+            {day.total_duration_minutes ? `${day.total_duration_minutes} min total` : ''}
+          </p>
           {wakeLockSupported && (
             <p className="text-xs text-green-400 mt-1">Screen will stay awake</p>
           )}
@@ -246,6 +250,11 @@ const WorkoutPlayer: React.FC<WorkoutPlayerProps> = ({ currentUserId }) => {
                   : `${currentExercise.exercise.reps} reps`
                 }
               </p>
+              {day?.sections && day.sections.length > 0 && (
+                <p className="text-sm text-gray-400">
+                  Sections: {day.sections.map(s => `${s.title} (${s.duration_minutes}m)`).join(' • ')}
+                </p>
+              )}
               <p className="text-gray-400 max-w-md">
                 {currentExercise.exercise.instructions}
               </p>

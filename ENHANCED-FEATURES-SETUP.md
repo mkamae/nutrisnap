@@ -14,10 +14,20 @@ This guide will help you set up the enhanced fitness app with fully functional *
 
 ### Step 1: Run Enhanced Schema Setup
 
+**Option A: Use the Browser Setup Tool (Recommended)**
+1. **Open `setup-enhanced-database.html`** in your browser
+2. **Copy the SQL from Step 1** 
+3. **Paste into Supabase SQL Editor**
+4. **Click "Run"**
+
+**Option B: Manual Setup**
 1. **Go to your Supabase project dashboard**
 2. **Navigate to SQL Editor**
-3. **Copy and paste the entire contents of `database/enhanced-schema-setup.sql`**
+3. **Copy and paste the entire contents of `database/enhanced-schema-fixed.sql`**
 4. **Click "Run" to execute the script**
+
+**Option C: Test Setup**
+- After running the main script, optionally run `database/test-enhanced-setup.sql` to verify everything worked
 
 This will create:
 - **Enhanced meals table** with image support and proper date handling

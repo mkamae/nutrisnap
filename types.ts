@@ -40,6 +40,60 @@ export interface FoodItem {
 // GUIDED WORKOUTS TYPES
 // =====================================================
 
+export interface WorkoutPlan {
+  id: string;
+  user_id: string | null;
+  title: string;
+  description?: string;
+  duration_minutes: number;
+  total_exercises: number;
+  est_calories?: number;
+  created_at: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  plan_id: string;
+  day_number: number;
+  title?: string;
+  // New fields for full sessions
+  workout_type?: 'cardio' | 'strength' | 'mobility' | 'hiit' | 'yoga' | 'core' | string;
+  total_duration_minutes?: number;
+  sections?: WorkoutSection[]; // warm-up, main, cool-down
+  created_at: string;
+}
+
+export interface WorkoutSection {
+  type: 'warmup' | 'main' | 'cooldown';
+  title: string;
+  duration_minutes: number;
+  steps: Array<{
+    name: string;
+    duration_seconds?: number;
+    reps?: number;
+    notes?: string;
+  }>;
+}
+
+export interface WorkoutDayExercise {
+  id: string;
+  day_id: string;
+  exercise_id: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface WorkoutCompletion {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  day_id: string;
+  duration_minutes: number;
+  exercises_completed: number;
+  total_exercises: number;
+  completed_at: string;
+}
+
 export interface DemoWorkout {
   id: string;
   name: string;

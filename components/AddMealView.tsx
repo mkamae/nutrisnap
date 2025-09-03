@@ -206,15 +206,16 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
         setUploadedImageUrl(finalImageUrl);
       }
       
-      // Ensure all numeric fields have proper values
+      // Ensure all numeric fields have proper values and correct DB field names
       const meal: Omit<MealEntry, 'id' | 'created_at'> = {
-        mealName: analysisResult.mealName.trim(),
+        user_id: currentUserId,
+        mealname: analysisResult.mealName.trim(),
         calories: Math.max(0, analysisResult.calories || 0),
         protein: Math.max(0, analysisResult.protein || 0),
         carbs: Math.max(0, analysisResult.carbs || 0),
         fat: Math.max(0, analysisResult.fat || 0),
-        portionSize: analysisResult.portionSize?.trim() || '1 serving',
-        imageUrl: finalImageUrl || previewUrl, // Fallback to preview URL if upload fails
+        portionsize: analysisResult.portionSize?.trim() || '1 serving',
+        imageurl: finalImageUrl || previewUrl || undefined,
         date: new Date().toISOString().split('T')[0]
       };
       

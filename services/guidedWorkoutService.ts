@@ -121,7 +121,10 @@ export const guidedWorkoutService = {
         .insert([{
           plan_id: day.plan_id,
           day_number: day.day_number,
-          title: day.title
+          title: day.title,
+          workout_type: day.workout_type || null,
+          total_duration_minutes: day.total_duration_minutes || null,
+          sections: day.sections || null
         }])
         .select()
         .single();

@@ -4,7 +4,7 @@ import { supabase, mealService, workoutSessionService } from './services/supabas
 import { MealEntry, WorkoutSession } from './types';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
-import EnhancedAddMealView from './components/EnhancedAddMealView';
+import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import EnhancedGuidedWorkoutsView from './components/EnhancedGuidedWorkoutsView';
 import BottomNav from './components/BottomNav';
@@ -263,9 +263,14 @@ function App() {
             <Route 
               path="/add-meal" 
               element={
-                <EnhancedAddMealView
+                <AddMealView
                   currentUserId={currentUserId}
-                  onMealAdded={addMealEntry}
+                  onCancel={() => {}}
+                  onConfirm={async (meal) => {
+                    if (!currentUserId) return;
+                    const saved = await mealService.createMeal(meal, currentUserId);
+                    addMealEntry(saved);
+                  }}
                 />
               } 
             />

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Database Setup - NutriSnap</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .step h3 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+        .sql-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+        .success {
+            background: #dcfce7;
+            border: 1px solid #16a34a;
+            color: #15803d;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
+        .feature h4 {
+            margin: 0 0 8px 0;
+            color: #1e40af;
+        }
+        .feature p {
+            margin: 0;
+            font-size: 14px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Enhanced Database Setup</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This will DROP existing tables and recreate them with sample data. Make sure you have backups if needed.
+        </div>
+
+        <div class="step">
+            <h3>📋 What This Setup Includes</h3>
+            <div class="feature-list">
+                <div class="feature">
+                    <h4>🍽️ Enhanced Meals</h4>
+                    <p>Meal logging with images, portions, and proper date handling</p>
+                </div>
+                <div class="feature">
+                    <h4>🥗 Food Database</h4>
+                    <p>15+ common foods with accurate nutrition data</p>
+                </div>
+                <div class="feature">
+                    <h4>🏋️ Demo Workouts</h4>
+                    <p>12+ exercises with detailed instructions</p>
+                </div>
+                <div class="feature">
+                    <h4>💪 Workout Tracking</h4>
+                    <p>Session logging with sets, reps, and calories</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Run Enhanced Schema Setup</h3>
+            <p>Copy this SQL and run it in your Supabase SQL Editor:</p>
+            <div class="sql-box" id="mainSql">-- Loading SQL content...</div>
+            <button class="copy-btn" onclick="copyToClipboard('mainSql')">📋 Copy SQL</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Verify Setup (Optional)</h3>
+            <p>Run this test script to verify everything worked:</p>
+            <div class="sql-box" id="testSql">-- Loading test SQL...</div>
+            <button class="copy-btn" onclick="copyToClipboard('testSql')">📋 Copy Test SQL</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Expected Results</h3>
+            <div class="success">
+                <strong>✅ Success Indicators:</strong>
+                <ul>
+                    <li>7 tables created successfully</li>
+                    <li>12+ demo workouts available</li>
+                    <li>8+ detailed exercises with instructions</li>
+                    <li>15+ food items in database</li>
+                    <li>RLS policies configured</li>
+                    <li>Indexes created for performance</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Test the Features</h3>
+            <p><strong>Meal Analysis:</strong></p>
+            <ol>
+                <li>Go to "Add Meal" in your app</li>
+                <li>Click "Search Food Database"</li>
+                <li>Search for "chicken" - should show results</li>
+                <li>Select "Chicken Breast" - nutrition auto-fills</li>
+                <li>Change portion to "200g" - nutrition doubles</li>
+                <li>Save meal - should appear on dashboard</li>
+            </ol>
+
+            <p><strong>Guided Workouts:</strong></p>
+            <ol>
+                <li>Go to "Workouts" tab</li>
+                <li>See 12+ demo workouts by category</li>
+                <li>Filter by "strength" - should show strength exercises</li>
+                <li>Click on "Push-ups" - see detailed instructions</li>
+                <li>Start workout - enter interactive player</li>
+                <li>Complete workout - see calories burned</li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <strong>🎉 Ready to Go!</strong><br>
+            After running the setup, your enhanced fitness app will have fully functional meal analysis and guided workouts!
+        </div>
+    </div>
+
+    <script>
+        // Load SQL content
+        const mainSql = `-- ENHANCED FITNESS APP DATABASE SETUP (FIXED VERSION)
+-- Run this entire script in Supabase SQL Editor
+
+-- =====================================================
+-- 1. DROP EXISTING TABLES (IF THEY EXIST)
+-- =====================================================
+
+-- Drop tables in correct order (child tables first)
+DROP TABLE IF EXISTS exercise_logs CASCADE;
+DROP TABLE IF EXISTS workout_sessions CASCADE;
+DROP TABLE IF EXISTS workouts CASCADE;
+DROP TABLE IF EXISTS exercises CASCADE;
+DROP TABLE IF EXISTS demo_workouts CASCADE;
+DROP TABLE IF EXISTS food_items CASCADE;
+DROP TABLE IF EXISTS meals CASCADE;
+
+-- =====================================================
+-- 2. CREATE MEALS TABLE (ENHANCED SCHEMA)
+-- =====================================================
+
+CREATE TABLE meals (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    mealname text NOT NULL,
+    portionsize text,
+    imageurl text,
+    calories integer NOT NULL CHECK (calories >= 0),
+    protein numeric NOT NULL CHECK (protein >= 0::numeric),
+    carbs numeric NOT NULL CHECK (carbs >= 0::numeric),
+    fat numeric NOT NULL CHECK (fat >= 0::numeric),
+    date date NOT NULL DEFAULT CURRENT_DATE,
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 3. CREATE FOOD ITEMS LIBRARY
+-- =====================================================
+
+CREATE TABLE food_items (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    calories_per_100g integer NOT NULL,
+    protein_per_100g numeric NOT NULL,
+    carbs_per_100g numeric NOT NULL,
+    fat_per_100g numeric NOT NULL,
+    category text,
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 4. CREATE DEMO WORKOUTS TABLE
+-- =====================================================
+
+CREATE TABLE demo_workouts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    category text NOT NULL,
+    reps integer,
+    sets integer,
+    duration_seconds integer,
+    instructions text,
+    muscle_groups text[],
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 5. CREATE EXERCISES TABLE
+-- =====================================================
+
+CREATE TABLE exercises (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    category text NOT NULL,
+    duration_seconds integer,
+    reps integer,
+    image_url text,
+    instructions text,
+    muscle_groups text[],
+    gif_url text,
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 6. CREATE WORKOUTS TABLE (USER'S CUSTOM WORKOUTS)
+-- =====================================================
+
+CREATE TABLE workouts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    description text,
+    exercises jsonb,
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 7. CREATE WORKOUT SESSIONS TABLE
+-- =====================================================
+
+CREATE TABLE workout_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    workout_id uuid REFERENCES workouts(id) ON DELETE SET NULL,
+    demo_workout_id uuid REFERENCES demo_workouts(id) ON DELETE SET NULL,
+    started_at timestamptz DEFAULT now(),
+    completed_at timestamptz,
+    total_duration_seconds integer,
+    calories_burned integer DEFAULT 0,
+    notes text
+);
+
+-- =====================================================
+-- 8. CREATE EXERCISE LOGS TABLE
+-- =====================================================
+
+CREATE TABLE exercise_logs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL REFERENCES workout_sessions(id) ON DELETE CASCADE,
+    exercise_id uuid REFERENCES exercises(id) ON DELETE SET NULL,
+    demo_workout_id uuid REFERENCES demo_workouts(id) ON DELETE SET NULL,
+    sets_completed integer DEFAULT 0,
+    reps_completed integer DEFAULT 0,
+    duration_seconds integer DEFAULT 0,
+    weight_used numeric,
+    notes text,
+    created_at timestamptz DEFAULT now()
+);
+
+-- =====================================================
+-- 9. ENABLE RLS AND CREATE POLICIES
+-- =====================================================
+
+-- Enable RLS
+ALTER TABLE meals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE food_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE demo_workouts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercise_logs ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for meals
+CREATE POLICY "Users can manage their own meals" 
+    ON meals FOR ALL 
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- Create policies for food_items (public read)
+CREATE POLICY "Everyone can view food items" 
+    ON food_items FOR SELECT 
+    USING (true);
+
+-- Create policies for demo_workouts (public read)
+CREATE POLICY "Everyone can view demo workouts" 
+    ON demo_workouts FOR SELECT 
+    USING (true);
+
+-- Create policies for exercises (public read)
+CREATE POLICY "Everyone can view exercises" 
+    ON exercises FOR SELECT 
+    USING (true);
+
+-- Create policies for workouts
+CREATE POLICY "Users can manage their own workouts" 
+    ON workouts FOR ALL 
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- Create policies for workout_sessions
+CREATE POLICY "Users can manage their own workout sessions" 
+    ON workout_sessions FOR ALL 
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- Create policies for exercise_logs
+CREATE POLICY "Users can manage their own exercise logs" 
+    ON exercise_logs FOR ALL 
+    USING (
+        EXISTS (
+            SELECT 1 FROM workout_sessions ws 
+            WHERE ws.id = exercise_logs.session_id 
+            AND ws.user_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM workout_sessions ws 
+            WHERE ws.id = exercise_logs.session_id 
+            AND ws.user_id = auth.uid()
+        )
+    );
+
+-- =====================================================
+-- 10. CREATE INDEXES FOR PERFORMANCE
+-- =====================================================
+
+CREATE INDEX idx_meals_user_id ON meals(user_id);
+CREATE INDEX idx_meals_date ON meals(date DESC);
+CREATE INDEX idx_meals_created_at ON meals(created_at DESC);
+CREATE INDEX idx_food_items_name ON food_items(name);
+CREATE INDEX idx_demo_workouts_category ON demo_workouts(category);
+CREATE INDEX idx_exercises_category ON exercises(category);
+CREATE INDEX idx_workouts_user_id ON workouts(user_id);
+CREATE INDEX idx_workout_sessions_user_id ON workout_sessions(user_id);
+CREATE INDEX idx_workout_sessions_started_at ON workout_sessions(started_at DESC);
+CREATE INDEX idx_exercise_logs_session_id ON exercise_logs(session_id);
+
+-- =====================================================
+-- 11. INSERT DEMO WORKOUTS
+-- =====================================================
+
+INSERT INTO demo_workouts (name, category, reps, sets, duration_seconds, instructions, muscle_groups) VALUES
+('Push-ups', 'strength', 10, 3, NULL, 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up to starting position. Keep your core tight and body in a straight line.', ARRAY['chest', 'triceps', 'shoulders', 'core']),
+('Squats', 'strength', 15, 3, NULL, 'Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and knees behind your toes. Go down until thighs are parallel to floor, then return to standing.', ARRAY['quadriceps', 'glutes', 'hamstrings', 'calves']),
+('Plank', 'core', NULL, 3, 30, 'Start in a push-up position but rest on your forearms. Keep your body in a straight line from head to heels. Hold this position while breathing normally. Do not let hips sag or pike up.', ARRAY['core', 'shoulders', 'back']),
+('Jumping Jacks', 'cardio', NULL, 3, 60, 'Stand with feet together and arms at your sides. Jump while spreading your legs shoulder-width apart and raising your arms overhead. Jump back to starting position. Maintain a steady rhythm.', ARRAY['full body', 'cardiovascular']),
+('Burpees', 'cardio', 8, 3, NULL, 'Start standing, drop into a squat with hands on floor, jump feet back into plank, do a push-up, jump feet back to squat, then jump up with arms overhead. Complete movement should be fluid.', ARRAY['full body', 'cardiovascular']),
+('Lunges', 'strength', 12, 3, NULL, 'Step forward with one leg, lowering your hips until both knees are bent at 90 degrees. Make sure front knee is directly above ankle. Push back to starting position and repeat with other leg.', ARRAY['quadriceps', 'glutes', 'hamstrings', 'calves']),
+('Mountain Climbers', 'cardio', NULL, 3, 45, 'Start in a plank position. Alternate bringing your knees toward your chest in a running motion while keeping your hands planted. Keep core tight and maintain plank position throughout.', ARRAY['core', 'shoulders', 'legs', 'cardiovascular']),
+('Crunches', 'core', 20, 3, NULL, 'Lie on your back with knees bent and hands behind your head. Lift your shoulders off the ground by contracting your abs, then lower back down. Focus on using abs, not pulling on neck.', ARRAY['core', 'abs']),
+('Wall Sit', 'strength', NULL, 3, 30, 'Stand with your back against a wall and slide down until your thighs are parallel to the floor. Keep your back flat against wall and feet shoulder-width apart. Hold this position.', ARRAY['quadriceps', 'glutes', 'calves']),
+('High Knees', 'cardio', NULL, 3, 30, 'Run in place while lifting your knees as high as possible, aiming to bring them to waist level. Pump your arms and maintain good posture. Keep a quick pace.', ARRAY['legs', 'core', 'cardiovascular']),
+('Tricep Dips', 'strength', 10, 3, NULL, 'Sit on edge of chair/bench, hands gripping edge. Slide forward and lower body by bending elbows. Push back up to starting position. Keep elbows close to body.', ARRAY['triceps', 'shoulders', 'chest']),
+('Russian Twists', 'core', 20, 3, NULL, 'Sit with knees bent, lean back slightly. Lift feet off ground and twist torso left and right, touching ground beside hips. Keep chest up and core engaged throughout.', ARRAY['core', 'obliques', 'abs']);
+
+-- =====================================================
+-- 12. INSERT DETAILED EXERCISES
+-- =====================================================
+
+INSERT INTO exercises (name, category, duration_seconds, reps, image_url, instructions, muscle_groups, gif_url) VALUES
+('Push-ups', 'strength', NULL, 10, 'https://example.com/pushup.jpg', 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up to starting position. Keep your core tight and body in a straight line throughout the movement.', ARRAY['chest', 'triceps', 'shoulders', 'core'], 'https://example.com/pushup.gif'),
+('Squats', 'strength', NULL, 15, 'https://example.com/squat.jpg', 'Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and knees behind your toes. Go down until thighs are parallel to floor, then return to standing position.', ARRAY['quadriceps', 'glutes', 'hamstrings', 'calves'], 'https://example.com/squat.gif'),
+('Plank', 'core', 30, NULL, 'https://example.com/plank.jpg', 'Start in a push-up position but rest on your forearms. Keep your body in a straight line from head to heels. Hold this position while breathing normally. Do not let hips sag or pike up.', ARRAY['core', 'shoulders', 'back'], 'https://example.com/plank.gif'),
+('Jumping Jacks', 'cardio', 60, NULL, 'https://example.com/jumpingjacks.jpg', 'Stand with feet together and arms at your sides. Jump while spreading your legs shoulder-width apart and raising your arms overhead. Jump back to starting position and maintain a steady rhythm.', ARRAY['full body', 'cardiovascular'], 'https://example.com/jumpingjacks.gif'),
+('Burpees', 'cardio', NULL, 8, 'https://example.com/burpee.jpg', 'Start standing, drop into a squat with hands on floor, jump feet back into plank, do a push-up, jump feet back to squat, then jump up with arms overhead. The complete movement should be fluid and controlled.', ARRAY['full body', 'cardiovascular'], 'https://example.com/burpee.gif'),
+('Lunges', 'strength', NULL, 12, 'https://example.com/lunge.jpg', 'Step forward with one leg, lowering your hips until both knees are bent at 90 degrees. Make sure your front knee is directly above your ankle. Push back to starting position and repeat with other leg.', ARRAY['quadriceps', 'glutes', 'hamstrings', 'calves'], 'https://example.com/lunge.gif'),
+('Mountain Climbers', 'cardio', 45, NULL, 'https://example.com/mountainclimbers.jpg', 'Start in a plank position. Alternate bringing your knees toward your chest in a running motion while keeping your hands planted firmly. Keep your core tight and maintain the plank position throughout.', ARRAY['core', 'shoulders', 'legs', 'cardiovascular'], 'https://example.com/mountainclimbers.gif'),
+('Crunches', 'core', NULL, 20, 'https://example.com/crunches.jpg', 'Lie on your back with knees bent and hands behind your head. Lift your shoulders off the ground by contracting your abs, then lower back down slowly. Focus on using your abs, not pulling on your neck.', ARRAY['core', 'abs'], 'https://example.com/crunches.gif');
+
+-- =====================================================
+-- 13. INSERT COMMON FOOD ITEMS
+-- =====================================================
+
+INSERT INTO food_items (name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, category) VALUES
+('Chicken Breast', 165, 31.0, 0.0, 3.6, 'protein'),
+('Brown Rice', 123, 2.6, 23.0, 0.9, 'carbs'),
+('Broccoli', 34, 2.8, 7.0, 0.4, 'vegetables'),
+('Banana', 89, 1.1, 23.0, 0.3, 'fruits'),
+('Almonds', 579, 21.2, 22.0, 49.9, 'nuts'),
+('Salmon', 208, 25.4, 0.0, 12.4, 'protein'),
+('Sweet Potato', 86, 1.6, 20.0, 0.1, 'carbs'),
+('Greek Yogurt', 59, 10.0, 3.6, 0.4, 'dairy'),
+('Spinach', 23, 2.9, 3.6, 0.4, 'vegetables'),
+('Oats', 389, 16.9, 66.0, 6.9, 'carbs'),
+('Eggs', 155, 13.0, 1.1, 11.0, 'protein'),
+('Avocado', 160, 2.0, 9.0, 15.0, 'fats'),
+('Quinoa', 368, 14.1, 64.2, 6.1, 'carbs'),
+('Tuna', 144, 30.0, 0.0, 1.0, 'protein'),
+('Apple', 52, 0.3, 14.0, 0.2, 'fruits');
+
+-- =====================================================
+-- 14. VERIFICATION AND SUCCESS MESSAGE
+-- =====================================================
+
+-- Show what was created
+SELECT 'ENHANCED SETUP COMPLETE!' as status;
+
+-- Show table counts
+SELECT 
+    'Tables Created' as info,
+    COUNT(*) as table_count
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name IN ('meals', 'food_items', 'demo_workouts', 'exercises', 'workouts', 'workout_sessions', 'exercise_logs');
+
+-- Show data counts
+SELECT 'Demo Workouts Available' as info, COUNT(*) as count FROM demo_workouts
+UNION ALL
+SELECT 'Exercises Available' as info, COUNT(*) as count FROM exercises
+UNION ALL
+SELECT 'Food Items Available' as info, COUNT(*) as count FROM food_items;
+
+-- Show sample data
+SELECT 'Sample Demo Workouts:' as info;
+SELECT 
+    name,
+    category,
+    COALESCE(reps::text, 'N/A') as reps,
+    COALESCE(sets::text, 'N/A') as sets,
+    COALESCE(duration_seconds::text || 's', 'N/A') as duration,
+    array_length(muscle_groups, 1) as muscle_group_count
+FROM demo_workouts
+ORDER BY category, name
+LIMIT 5;
+
+SELECT 'Sample Food Items:' as info;
+SELECT 
+    name,
+    calories_per_100g as calories,
+    protein_per_100g as protein,
+    category
+FROM food_items
+ORDER BY category, name
+LIMIT 5;
+
+SELECT '🎉 SUCCESS: Enhanced database setup complete! All tables created with sample data.' as message;`;
+
+        const testSql = `-- TEST ENHANCED SETUP
+-- Run this after running enhanced-schema-fixed.sql to verify everything works
+
+-- Check if all tables exist
+SELECT 
+    table_name,
+    CASE 
+        WHEN table_name IN (
+            'meals', 'food_items', 'demo_workouts', 'exercises', 
+            'workouts', 'workout_sessions', 'exercise_logs'
+        ) THEN '✅ EXISTS'
+        ELSE '❌ MISSING'
+    END as status
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name IN (
+    'meals', 'food_items', 'demo_workouts', 'exercises', 
+    'workouts', 'workout_sessions', 'exercise_logs'
+)
+ORDER BY table_name;
+
+-- Check sample data
+SELECT 'demo_workouts' as table_name, COUNT(*) as row_count FROM demo_workouts
+UNION ALL
+SELECT 'exercises' as table_name, COUNT(*) as row_count FROM exercises
+UNION ALL
+SELECT 'food_items' as table_name, COUNT(*) as row_count FROM food_items;
+
+-- Final status check
+SELECT 
+    CASE 
+        WHEN (
+            SELECT COUNT(*) FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name IN ('meals', 'food_items', 'demo_workouts', 'exercises', 'workouts', 'workout_sessions', 'exercise_logs')
+        ) = 7 
+        AND (SELECT COUNT(*) FROM demo_workouts) > 0
+        AND (SELECT COUNT(*) FROM food_items) > 0
+        AND (SELECT COUNT(*) FROM exercises) > 0
+        THEN '🎉 ALL TESTS PASSED - Setup is complete and working!'
+        ELSE '❌ SOME TESTS FAILED - Please check the setup'
+    END as final_status;`;
+
+        document.getElementById('mainSql').textContent = mainSql;
+        document.getElementById('testSql').textContent = testSql;
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#16a34a';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#3b82f6';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard. Please select and copy manually.');
+            });
+        }
+    </script>
+</body>
+</html>
