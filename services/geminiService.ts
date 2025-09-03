@@ -67,22 +67,40 @@ export const analyzeImageWithGemini = async (base64Image: string, mimeType: stri
       }
     });
 
-    const jsonText = response.text.trim();
-    const parsedJson = JSON.parse(jsonText);
+    // Some models wrap JSON in code fences or include extra text; extract JSON safely
+    let raw = response.text.trim();
+    const fenceStart = raw.indexOf('{');
+    const fenceEnd = raw.lastIndexOf('}');
+    if (fenceStart !== -1 && fenceEnd !== -1 && fenceEnd > fenceStart) {
+      raw = raw.slice(fenceStart, fenceEnd + 1);
+    }
+
+    const parsed = JSON.parse(raw);
+
+    // Coerce numeric fields even if strings with units are returned
+    const toNumber = (v: any): number => {
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        const n = parseFloat(v.replace(/[^0-9.\-]/g, ''));
+        if (!isNaN(n)) return n;
+      }
+      throw new Error('Invalid numeric value');
+    };
+
+    const result: Nutrients = {
+      mealName: String(parsed.mealName ?? parsed.mealname ?? 'Analyzed meal'),
+      calories: toNumber(parsed.calories),
+      protein: toNumber(parsed.protein),
+      carbs: toNumber(parsed.carbs),
+      fat: toNumber(parsed.fat),
+      portionSize: parsed.portionSize ?? parsed.portionsize ?? undefined
+    };
     
     // Basic validation
-    if (
-        typeof parsedJson.mealName === 'string' &&
-        typeof parsedJson.calories === 'number' &&
-        typeof parsedJson.protein === 'number' &&
-        typeof parsedJson.carbs === 'number' &&
-        typeof parsedJson.fat === 'number' &&
-        typeof parsedJson.portionSize === 'string'
-    ) {
-        return parsedJson as Nutrients;
-    } else {
-        throw new Error("Gemini response is missing required fields or has incorrect types.");
+    if (!result.mealName || [result.calories, result.protein, result.carbs, result.fat].some(v => typeof v !== 'number')) {
+      throw new Error('Gemini response missing required fields');
     }
+    return result;
 
   } catch (error) {
     console.error("Error analyzing image with Gemini:", error);

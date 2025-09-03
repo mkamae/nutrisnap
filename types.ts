@@ -3,12 +3,12 @@
 // =====================================================
 
 export interface Nutrients {
-  mealname: string;
+  mealName: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  portionsize?: string;
+  portionSize?: string;
 }
 
 export interface MealEntry {
