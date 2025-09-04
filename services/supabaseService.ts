@@ -6,7 +6,8 @@ import {
   Exercise, 
   Workout, 
   WorkoutSession, 
-  ExerciseLog 
+  ExerciseLog,
+  UserProfile
 } from '../types';
 
 // Access environment variables directly
@@ -567,6 +568,105 @@ export const exerciseLogService = {
       return data;
     } catch (error) {
       console.error('Error in getExerciseLogs:', error);
+      throw error;
+    }
+  }
+};
+
+// =====================================================
+// USER PROFILE SERVICE
+// =====================================================
+
+export const userProfileService = {
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No profile found, return null
+          return null;
+        }
+        console.error('Error fetching user profile:', error);
+        throw new Error(`Failed to fetch user profile: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getUserProfile:', error);
+      throw error;
+    }
+  },
+
+  async createUserProfile(profile: Omit<UserProfile, 'id' | 'updated_at'>): Promise<UserProfile> {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([profile])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+        throw new Error(`Failed to create user profile: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
+      throw error;
+    }
+  },
+
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        throw new Error(`Failed to update user profile: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
+  },
+
+  async getOrCreateUserProfile(userId: string, email?: string): Promise<UserProfile> {
+    try {
+      // Try to get existing profile
+      let profile = await this.getUserProfile(userId);
+      
+      if (!profile) {
+        // Create default profile if none exists
+        const defaultProfile: Omit<UserProfile, 'id' | 'updated_at'> = {
+          user_id: userId,
+          name: email ? email.split('@')[0] : 'User', // Use email prefix as default name
+          age: 25,
+          weightKg: 70,
+          heightCm: 170,
+          activityLevel: 'moderate',
+          dailyCalorieGoal: 2500
+        };
+        
+        profile = await this.createUserProfile(defaultProfile);
+        console.log('✅ Created default user profile');
+      }
+      
+      return profile;
+    } catch (error) {
+      console.error('Error in getOrCreateUserProfile:', error);
       throw error;
     }
   }

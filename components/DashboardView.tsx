@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MealEntry } from '../types';
+import { MealEntry, UserProfile } from '../types';
 
 interface DashboardViewProps {
   entries: MealEntry[];
-  profile: null; // No longer used, kept for compatibility
+  profile: UserProfile | null;
   workoutCalories?: number;
   netCalories?: number;
   caloriesLeft?: number;
@@ -18,8 +18,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   caloriesLeft = 0
 }) => {
   const navigate = useNavigate();
-  // Default daily calorie goal since profiles are no longer managed
-  const defaultDailyCalorieGoal = 2500;
+  // Use profile data or fallback to defaults
+  const dailyCalorieGoal = profile?.dailyCalorieGoal || 2500;
+  const userName = profile?.name || 'User';
 
   const totals = entries.reduce((acc, entry) => ({
     calories: acc.calories + (entry.calories || 0),
@@ -39,7 +40,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Welcome Header */}
       <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, User!
+          Welcome back, {userName}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Let's track your nutrition and fitness today
@@ -54,7 +55,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {Math.max(0, caloriesLeft)}
           </span>
           <span className="text-lg text-gray-600 dark:text-gray-300">
-            / {defaultDailyCalorieGoal} kcal
+            / {dailyCalorieGoal} kcal
           </span>
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">

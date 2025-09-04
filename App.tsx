@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase, mealService, workoutSessionService, healthCheckSupabase } from './services/supabaseService';
-import { MealEntry, WorkoutSession } from './types';
+import { supabase, mealService, workoutSessionService, healthCheckSupabase, userProfileService } from './services/supabaseService';
+import { MealEntry, WorkoutSession, UserProfile } from './types';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
@@ -16,6 +16,7 @@ import BottomNav from './components/BottomNav';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +42,7 @@ function App() {
         if (user.data.user) {
           setCurrentUserId(user.data.user.id);
           setIsAuthenticated(true);
-          await loadUserData(user.data.user.id);
+          await loadUserData(user.data.user.id, user.data.user.email);
         } else {
           console.log('🚫 No authenticated user found, showing auth view');
         }
@@ -73,12 +74,13 @@ function App() {
         if (event === 'SIGNED_IN' && session?.user) {
           setCurrentUserId(session.user.id);
           setIsAuthenticated(true);
-          await loadUserData(session.user.id);
+          await loadUserData(session.user.id, session.user.email);
           // Track sign in
           trackPageView('NutriSnap - Dashboard', window.location.href);
         } else if (event === 'SIGNED_OUT') {
           setCurrentUserId(null);
           setIsAuthenticated(false);
+          setUserProfile(null);
           setMealEntries([]);
           setWorkoutSessions([]);
           // Track sign out
@@ -90,9 +92,15 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserData = async (userId: string) => {
+  const loadUserData = async (userId: string, email?: string) => {
     try {
       console.log('📊 Loading user data for:', userId);
+      
+      // Load user profile
+      console.log('👤 Loading user profile...');
+      const profile = await userProfileService.getOrCreateUserProfile(userId, email);
+      setUserProfile(profile);
+      console.log('✅ User profile loaded:', profile.name);
       
       // Load meals
       console.log('🍽️ Loading meals...');
@@ -269,7 +277,7 @@ function App() {
               element={
                 <DashboardView
                   entries={todaysEntries.entries}
-                  profile={null}
+                  profile={userProfile}
                   workoutCalories={todaysWorkoutCalories}
                   netCalories={netCalories}
                   caloriesLeft={caloriesLeft}

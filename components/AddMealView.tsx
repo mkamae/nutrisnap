@@ -26,6 +26,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,23 +76,66 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   };
   
   const handleStartCamera = async () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        streamRef.current = stream;
-        setIsCameraOpen(true);
-      } catch (err) {
-        console.error("Error accessing camera:", err);
-        setError("Could not access camera. Please check permissions.");
+    // Check if camera is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError("Camera is not supported on this device. Please use the file upload option instead.");
+      return;
+    }
+
+    // Check if we're in a secure context (HTTPS or localhost)
+    if (!window.isSecureContext) {
+      setError("Camera access requires a secure connection (HTTPS). Please use the file upload option instead.");
+      return;
+    }
+
+    setIsCameraLoading(true);
+    setError(null);
+
+    try {
+      // First try with environment camera (back camera)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      streamRef.current = stream;
+      setIsCameraOpen(true);
+      setError(null); // Clear any previous errors
+      
+      console.log('✅ Camera access granted');
+      
+    } catch (err: any) {
+      console.error("Error accessing camera:", err);
+      
+      // Handle specific permission errors
+      if (err.name === 'NotAllowedError') {
+        setError("Camera permission denied. Please allow camera access in your browser settings and try again.");
+      } else if (err.name === 'NotFoundError') {
+        setError("No camera found on this device. Please use the file upload option instead.");
+      } else if (err.name === 'NotReadableError') {
+        setError("Camera is already in use by another application. Please close other camera apps and try again.");
+      } else if (err.name === 'OverconstrainedError') {
+        // Try with less restrictive constraints
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+            video: true 
+          });
+          streamRef.current = fallbackStream;
+          setIsCameraOpen(true);
+          setError(null);
+          console.log('✅ Camera access granted with fallback constraints');
+        } catch (fallbackErr: any) {
+          console.error("Fallback camera access failed:", fallbackErr);
+          setError("Camera access failed. Please use the file upload option instead.");
+        }
+      } else {
+        setError("Camera access failed. Please use the file upload option instead.");
       }
-    } else {
-      setError("Camera is not supported on this device.");
+    } finally {
+      setIsCameraLoading(false);
     }
   };
 
@@ -104,6 +148,22 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
+    setError(null); // Clear any camera-related errors
+  };
+
+  // Check camera permissions
+  const checkCameraPermissions = async () => {
+    if (!navigator.mediaDevices || !navigator.permissions) {
+      return 'not-supported';
+    }
+
+    try {
+      const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      return permission.state;
+    } catch (err) {
+      console.log('Permission query not supported, will try direct access');
+      return 'unknown';
+    }
   };
 
   const handleTakePicture = () => {
@@ -258,13 +318,38 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
         <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
         <canvas ref={canvasRef} className="hidden"></canvas>
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50 flex justify-center items-center">
-          <button 
-            onClick={handleTakePicture} 
-            aria-label="Take picture"
-            className="w-16 h-16 bg-white rounded-full border-4 border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-white"
-          ></button>
-          <button onClick={handleStopCamera} className="absolute right-6 text-white font-semibold text-lg">Cancel</button>
+        
+        {/* Camera Instructions */}
+        <div className="absolute top-4 left-4 right-4 text-center">
+          <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
+            <p className="text-sm font-medium">Position your meal in the frame and tap the button below</p>
+          </div>
+        </div>
+        
+        {/* Camera Controls */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-black bg-opacity-50 flex flex-col items-center">
+          <div className="flex items-center space-x-6">
+            <button 
+              onClick={handleStopCamera}
+              className="text-white hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <button 
+              onClick={handleTakePicture} 
+              aria-label="Take picture"
+              className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-black focus:ring-white hover:bg-gray-100 transition-colors"
+            ></button>
+            
+            <div className="w-8 h-8"></div> {/* Spacer for centering */}
+          </div>
+          
+          <p className="text-white text-sm mt-4 text-center">
+            Tap the white button to take a photo
+          </p>
         </div>
       </div>
     );
@@ -302,16 +387,42 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
               </div>
               
               {/* Camera Button */}
-              <div className="text-center">
+              <div className="text-center space-y-3">
                 <button
                   onClick={isCameraOpen ? handleStopCamera : handleStartCamera}
+                  disabled={isCameraLoading}
                   className={`btn-primary flex items-center justify-center mx-auto ${
                     isCameraOpen ? 'bg-red-600 hover:bg-red-700' : ''
-                  }`}
+                  } ${isCameraLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <CameraIcon className="w-5 h-5 mr-2" />
-                  {isCameraOpen ? 'Stop Camera' : 'Open Camera'}
+                  {isCameraLoading ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Accessing Camera...
+                    </>
+                  ) : (
+                    <>
+                      <CameraIcon className="w-5 h-5 mr-2" />
+                      {isCameraOpen ? 'Stop Camera' : 'Open Camera'}
+                    </>
+                  )}
                 </button>
+                
+                {/* Camera Help Text */}
+                <div className="text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                  <p className="mb-2">
+                    <strong>Camera Tips:</strong>
+                  </p>
+                  <ul className="text-left space-y-1">
+                    <li>• Ensure good lighting for better analysis</li>
+                    <li>• Position the meal clearly in the frame</li>
+                    <li>• Allow camera permissions when prompted</li>
+                    <li>• Use file upload if camera doesn't work</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -452,9 +563,27 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-sm text-red-600 dark:text-red-400 text-center">
-                {error}
-              </p>
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-2">
+                    {error}
+                  </p>
+                  {error.includes('permission') && (
+                    <div className="text-xs text-red-500 dark:text-red-400 space-y-1">
+                      <p><strong>How to fix:</strong></p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Click the camera icon in your browser's address bar</li>
+                        <li>Select "Allow" for camera access</li>
+                        <li>Refresh the page and try again</li>
+                        <li>Or use the file upload option above</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
