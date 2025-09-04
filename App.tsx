@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase, mealService, workoutSessionService, healthCheckSupabase } from './services/supabaseService';
 import { MealEntry, WorkoutSession } from './types';
+import { initializeAnalytics, trackPageView } from './utils/analytics';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
@@ -25,6 +26,10 @@ function App() {
     const initializeApp = async () => {
       try {
         console.log('🔍 Initializing app...');
+        
+        // Initialize Google Analytics
+        initializeAnalytics();
+        
         // Health check
         const hc = await healthCheckSupabase();
         if (!hc.ok) {
@@ -69,11 +74,15 @@ function App() {
           setCurrentUserId(session.user.id);
           setIsAuthenticated(true);
           await loadUserData(session.user.id);
+          // Track sign in
+          trackPageView('NutriSnap - Dashboard', window.location.href);
         } else if (event === 'SIGNED_OUT') {
           setCurrentUserId(null);
           setIsAuthenticated(false);
           setMealEntries([]);
           setWorkoutSessions([]);
+          // Track sign out
+          trackPageView('NutriSnap - Sign Out', window.location.href);
         }
       }
     );

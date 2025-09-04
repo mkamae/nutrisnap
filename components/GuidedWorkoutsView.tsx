@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DemoWorkout } from '../types';
 import { demoWorkoutService } from '../services/supabaseService';
+import { trackPageView, trackEngagementEvent } from '../utils/analytics';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 
@@ -26,6 +27,8 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
 
   useEffect(() => {
     loadWorkouts();
+    // Track page view
+    trackPageView('NutriSnap - Workout Sessions', window.location.href);
   }, []);
 
   const loadWorkouts = async () => {
@@ -95,6 +98,8 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
 
   const handleSessionClick = (session: WorkoutSession) => {
     setSelectedSession(session);
+    // Track workout session view
+    trackEngagementEvent('view', `workout_session_${session.category}`);
   };
 
   const handleBackClick = () => {

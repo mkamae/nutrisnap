@@ -4,6 +4,7 @@ import { MealEntry } from '../types';
 import { analyzeImageWithGemini } from '../services/geminiService';
 import { imageStorageService } from '../services/imageStorageService';
 import { fileToBase64 } from '../utils/helpers';
+import { trackEngagementEvent, trackMealEvent } from '../utils/analytics';
 import Loader from './Loader';
 import CameraIcon from './icons/CameraIcon';
 
@@ -58,6 +59,8 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       setPreviewUrl(URL.createObjectURL(file));
       setError(null);
       setAnalysisResult(null);
+      // Track file upload
+      trackEngagementEvent('upload', 'meal_image');
     }
   };
   
@@ -231,6 +234,9 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
       console.log('📝 Saving meal to database:', meal);
       await onConfirm(meal);
       console.log('✅ Meal saved successfully');
+      
+      // Track successful meal addition
+      trackMealEvent('add', analysisResult.mealName.trim());
       
       // Show success state briefly, then navigate back
       setIsSuccess(true);
