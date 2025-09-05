@@ -35,6 +35,13 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   useEffect(() => {
     if (isCameraOpen && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
+      // Ensure playback starts on mobile browsers (iOS Safari needs explicit play call)
+      const playPromise = videoRef.current.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch(() => {
+          // Ignore play interruptions; user interaction will allow it
+        });
+      }
     } else if (!isCameraOpen && videoRef.current) {
       // Clear the video source when camera is closed
       videoRef.current.srcObject = null;
@@ -316,7 +323,7 @@ const AddMealView: React.FC<AddMealViewProps> = ({ onConfirm, onCancel, currentU
   if (isCameraOpen) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
         <canvas ref={canvasRef} className="hidden"></canvas>
         
         {/* Camera Instructions */}
