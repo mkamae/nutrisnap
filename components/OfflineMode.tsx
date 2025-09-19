@@ -54,6 +54,16 @@ const OfflineMode: React.FC = () => {
           >
             🎮 Try Gamification Demo
           </button>
+          <button
+            onClick={() => {
+              // Navigate to database audit
+              window.location.hash = '#database-audit';
+              window.location.reload();
+            }}
+            className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            🔍 Run Database Audit
+          </button>
         </div>
         
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">

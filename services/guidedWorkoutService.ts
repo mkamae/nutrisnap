@@ -1,4 +1,4 @@
-import { supabase } from './supabaseService';
+import { supabase, withTimeout } from './supabaseService';
 import { WorkoutPlan, WorkoutDay, Exercise, WorkoutDayExercise, WorkoutCompletion } from '../types';
 
 export const guidedWorkoutService = {
@@ -32,7 +32,11 @@ export const guidedWorkoutService = {
         query = query.is('user_id', null);
       }
       
-      const { data, error } = await query;
+      const { data, error } = await withTimeout(
+        query,
+        'Get workout plans',
+        15000
+      );
       
       if (error) {
         console.error('❌ Error fetching workout plans:', error);

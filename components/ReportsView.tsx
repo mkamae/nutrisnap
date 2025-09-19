@@ -52,11 +52,23 @@ const ReportsView: React.FC<ReportsViewProps> = ({ currentUserId }) => {
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
-      // Fetch meals and workout sessions
-      const [meals, workoutSessions] = await Promise.all([
-        mealService.getMealsByDateRange(currentUserId, startDateStr, endDateStr),
-        workoutSessionService.getWorkoutSessions(currentUserId)
-      ]);
+      // Fetch meals and workout sessions with error handling
+      let meals: MealEntry[] = [];
+      let workoutSessions: WorkoutSession[] = [];
+
+      try {
+        meals = await mealService.getMealsByDateRange(currentUserId, startDateStr, endDateStr);
+      } catch (error) {
+        console.error('Error loading meals for reports:', error);
+        // Continue with empty meals array
+      }
+
+      try {
+        workoutSessions = await workoutSessionService.getWorkoutSessions(currentUserId);
+      } catch (error) {
+        console.error('Error loading workout sessions for reports:', error);
+        // Continue with empty workout sessions array
+      }
 
       // Group data by date
       const dataMap = new Map<string, DailyData>();

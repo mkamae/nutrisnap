@@ -15,6 +15,7 @@ import ReportsView from './components/ReportsView';
 import BottomNav from './components/BottomNav';
 import OfflineMode from './components/OfflineMode';
 import GamificationDemo from './components/GamificationDemo';
+import DatabaseAudit from './components/DatabaseAudit';
 
 
 function App() {
@@ -295,6 +296,10 @@ function App() {
     // Check if user wants to see gamification demo
     if (window.location.hash === '#gamification-demo') {
       return <GamificationDemo />;
+    }
+    // Check if user wants to see database audit
+    if (window.location.hash === '#database-audit') {
+      return <DatabaseAudit />;
     }
     return <OfflineMode />;
   }

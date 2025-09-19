@@ -54,7 +54,7 @@ export const healthCheckSupabase = async () => {
     const result = await withTimeout(
       (async () => await supabase.from('meals').select('id').limit(1))(),
       'HealthCheck: select meals id',
-      8000
+      15000 // Increased timeout to 15 seconds
     );
     const { error } = result as any;
     if (error) {
@@ -167,13 +167,17 @@ export const mealService = {
 
   async getMealsByDateRange(userId: string, startDate: string, endDate: string): Promise<MealEntry[]> {
     try {
-      const { data, error } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('created_at', { ascending: false });
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('meals')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('created_at', { ascending: false }))(),
+        'Get meals by date range',
+        15000
+      ) as any;
 
       if (error) {
         console.error('Error fetching meals by date range:', error);
@@ -498,12 +502,16 @@ export const workoutSessionService = {
 
   async getWorkoutSessions(userId: string, limit: number = 10): Promise<WorkoutSession[]> {
     try {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('started_at', { ascending: false })
-        .limit(limit);
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('workout_sessions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('started_at', { ascending: false })
+          .limit(limit))(),
+        'Get workout sessions',
+        15000
+      ) as any;
 
       if (error) {
         console.error('Error fetching workout sessions:', error);
