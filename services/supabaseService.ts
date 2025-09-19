@@ -46,6 +46,21 @@ export async function withTimeout<T>(promise: Promise<T>, label: string, timeout
   }
 }
 
+// Small retry helper with jitter
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 300): Promise<T> {
+  let lastErr: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      lastErr = e;
+      const delay = baseDelayMs * (i + 1) + Math.floor(Math.random() * 200);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 // -----------------------------------------------------
 // Connectivity audit utility
 // -----------------------------------------------------
@@ -219,13 +234,15 @@ export const mealService = {
 
   async getMealsByDateRange(userId: string, startDate: string, endDate: string): Promise<MealEntry[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withRetry(async () => {
+        return await supabase
         .from('meals')
         .select('*')
         .eq('user_id', userId)
         .gte('date', startDate)
         .lte('date', endDate)
         .order('created_at', { ascending: false });
+      });
 
       if (error) {
         console.error('Error fetching meals by date range:', error);
@@ -322,7 +339,7 @@ export const demoWorkoutService = {
       return data || [];
     } catch (error) {
       console.error('Error in getDemoWorkouts:', error);
-    throw error;
+      throw error;
     }
   },
 
@@ -341,7 +358,7 @@ export const demoWorkoutService = {
       return (data || []).filter((w: any) => w.category === category);
     } catch (error) {
       console.error('Error in getDemoWorkoutsByCategory:', error);
-    throw error;
+      throw error;
     }
   }
 };
@@ -548,12 +565,14 @@ export const workoutSessionService = {
 
   async getWorkoutSessions(userId: string, limit: number = 10): Promise<WorkoutSession[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withRetry(async () => {
+        return await supabase
         .from('workout_sessions')
         .select('*')
         .eq('user_id', userId)
         .order('started_at', { ascending: false })
         .limit(limit);
+      });
 
       if (error) {
         console.error('Error fetching workout sessions:', error);

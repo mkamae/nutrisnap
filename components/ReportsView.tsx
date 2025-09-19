@@ -58,16 +58,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({ currentUserId }) => {
 
       try {
         meals = await mealService.getMealsByDateRange(currentUserId, startDateStr, endDateStr);
-      } catch (error) {
-        console.error('Error loading meals for reports:', error);
-        // Continue with empty meals array
+      } catch (error: any) {
+        console.error('Error loading meals for reports:', error?.message || error);
       }
 
       try {
         workoutSessions = await workoutSessionService.getWorkoutSessions(currentUserId);
-      } catch (error) {
-        console.error('Error loading workout sessions for reports:', error);
-        // Continue with empty workout sessions array
+      } catch (error: any) {
+        console.error('Error loading workout sessions for reports:', error?.message || error);
       }
 
       // Group data by date
