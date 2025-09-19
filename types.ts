@@ -247,3 +247,6 @@ export interface MealFilters {
   date?: string;
   category?: string;
 }
+
+// Re-export gamification types
+export * from './gamification';

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MealEntry, UserProfile } from '../types';
+import GamificationPanel from './gamification/GamificationPanel';
 
 interface DashboardViewProps {
   entries: MealEntry[];
@@ -37,6 +38,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 p-4">
+      {/* Gamification Panel */}
+      <GamificationPanel />
+      
       {/* Welcome Header */}
       <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

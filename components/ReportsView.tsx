@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { MealEntry, WorkoutSession } from '../types';
 import { mealService, workoutSessionService } from '../services/supabaseService';
+import { gamificationService } from '../services/gamificationService';
+import GamificationSummary from './gamification/GamificationSummary';
 
 interface ReportsViewProps {
   currentUserId: string | null;
@@ -21,11 +23,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({ currentUserId }) => {
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
+  const [gamificationData, setGamificationData] = useState(gamificationService.getDefaultData());
 
   useEffect(() => {
     if (currentUserId) {
       loadReportsData();
     }
+    // Load gamification data
+    setGamificationData(gamificationService.loadData());
   }, [currentUserId, selectedPeriod]);
 
   const loadReportsData = async () => {
@@ -157,6 +162,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({ currentUserId }) => {
           Track your nutrition and fitness progress
         </p>
       </div>
+
+      {/* Gamification Summary */}
+      <GamificationSummary data={gamificationData} />
 
       {/* Period Selector */}
       <div className="flex justify-center space-x-4">

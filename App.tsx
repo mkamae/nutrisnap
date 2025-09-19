@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { supabase, mealService, workoutSessionService, healthCheckSupabase, userProfileService } from './services/supabaseService';
 import { MealEntry, WorkoutSession, UserProfile } from './types';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
+import { gamificationService } from './services/gamificationService';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import AddMealView from './components/AddMealView';
@@ -167,6 +168,15 @@ function App() {
       return newEntries;
     });
     
+    // Award gamification points for meal logging
+    try {
+      gamificationService.awardMealPoints();
+      gamificationService.checkBadgeUnlocks();
+      console.log('🎮 Gamification points awarded for meal logging');
+    } catch (error) {
+      console.error('Error awarding gamification points:', error);
+    }
+    
     console.log('Meal entry added successfully!');
   };
 
@@ -179,6 +189,15 @@ function App() {
       console.log('New workout sessions:', newSessions);
       return newSessions;
     });
+    
+    // Award gamification points for workout completion
+    try {
+      gamificationService.awardWorkoutPoints();
+      gamificationService.checkBadgeUnlocks();
+      console.log('🎮 Gamification points awarded for workout completion');
+    } catch (error) {
+      console.error('Error awarding gamification points:', error);
+    }
     
     console.log('Workout session added successfully!');
   };
