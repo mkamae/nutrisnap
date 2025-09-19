@@ -5,6 +5,7 @@ import {
   HomeIcon, 
   PlusCircleIcon, 
   ChartBarIcon, 
+  ReportsIcon,
   UserCircleIcon 
 } from './icons';
 
@@ -25,6 +26,12 @@ const BottomNav: React.FC = () => {
       label: 'Add Meal',
       icon: PlusCircleIcon,
       color: 'text-green-600'
+    },
+    {
+      id: '/reports',
+      label: 'Reports',
+      icon: ReportsIcon,
+      color: 'text-orange-600'
     },
     {
       id: '/guided-workouts',

@@ -10,6 +10,7 @@ import ProfileView from './components/ProfileView';
 import GuidedWorkoutsView from './components/GuidedWorkoutsView';
 import WorkoutPlanDetail from './components/WorkoutPlanDetail';
 import WorkoutPlayer from './components/WorkoutPlayer';
+import ReportsView from './components/ReportsView';
 import BottomNav from './components/BottomNav';
 
 
@@ -326,6 +327,14 @@ function App() {
               path="/guided-workouts/player/:planId/:dayId" 
               element={
                 <WorkoutPlayer
+                  currentUserId={currentUserId}
+                />
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ReportsView
                   currentUserId={currentUserId}
                 />
               } 

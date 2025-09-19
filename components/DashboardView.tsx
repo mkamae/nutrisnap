@@ -161,7 +161,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
         
         <button
-                      onClick={() => navigate('/workouts')}
+                      onClick={() => navigate('/guided-workouts')}
           className="p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition-colors"
         >
           <div className="text-center">
