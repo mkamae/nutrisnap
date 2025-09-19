@@ -15,10 +15,34 @@ const GamificationPanel: React.FC<GamificationPanelProps> = ({
   const [badges, setBadges] = useState<Badge[]>([]);
   const [showBadgeNotification, setShowBadgeNotification] = useState<string | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showLoginReward, setShowLoginReward] = useState(false);
 
   useEffect(() => {
     loadGamificationData();
+    checkDailyLogin();
   }, []);
+
+  const checkDailyLogin = () => {
+    const loginEvent = gamificationService.awardDailyLoginPoints();
+    if (loginEvent) {
+      const newBadges = gamificationService.checkBadgeUnlocks();
+      loadGamificationData();
+      
+      if (loginEvent.levelUp) {
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 3000);
+      }
+      
+      if (newBadges.length > 0) {
+        setShowBadgeNotification(newBadges[0]);
+        setTimeout(() => setShowBadgeNotification(null), 3000);
+      }
+      
+      // Show login reward notification
+      setShowLoginReward(true);
+      setTimeout(() => setShowLoginReward(false), 3000);
+    }
+  };
 
   const loadGamificationData = () => {
     const gamificationData = gamificationService.loadData();
@@ -99,6 +123,17 @@ const GamificationPanel: React.FC<GamificationPanelProps> = ({
         </div>
       )}
 
+      {/* Login Reward Notification */}
+      {showLoginReward && (
+        <div className="fixed top-4 left-4 z-50 bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
+          <div className="text-center">
+            <div className="text-2xl mb-1">🎉</div>
+            <div className="font-bold">Daily Login Reward!</div>
+            <div className="text-sm">+10 points for logging in today</div>
+          </div>
+        </div>
+      )}
+
       {/* Main Gamification Panel */}
       <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md border border-blue-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
@@ -139,7 +174,7 @@ const GamificationPanel: React.FC<GamificationPanelProps> = ({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-4 gap-3 mb-4">
           <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
             <div className="text-lg font-bold text-green-600 dark:text-green-400">
               {data.streak}
@@ -157,6 +192,12 @@ const GamificationPanel: React.FC<GamificationPanelProps> = ({
               {data.totalWorkoutsCompleted}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400">Workouts</div>
+          </div>
+          <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {data.totalLogins}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">Logins</div>
           </div>
         </div>
 

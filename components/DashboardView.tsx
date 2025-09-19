@@ -6,6 +6,7 @@ import GamificationPanel from './gamification/GamificationPanel';
 interface DashboardViewProps {
   entries: MealEntry[];
   profile: UserProfile | null;
+  userEmail?: string;
   workoutCalories?: number;
   netCalories?: number;
   caloriesLeft?: number;
@@ -14,6 +15,7 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({ 
   entries, 
   profile, 
+  userEmail,
   workoutCalories = 0,
   netCalories = 0,
   caloriesLeft = 0
@@ -21,7 +23,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const navigate = useNavigate();
   // Use profile data or fallback to defaults
   const dailyCalorieGoal = profile?.dailyCalorieGoal || 2500;
-  const userName = profile?.name || 'User';
+  const userName = userEmail || 'Guest';
 
   const totals = entries.reduce((acc, entry) => ({
     calories: acc.calories + (entry.calories || 0),

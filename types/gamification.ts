@@ -7,9 +7,11 @@ export interface GamificationData {
   level: number;
   streak: number;
   lastActivityDate: string;
+  lastLoginDate: string;
   unlockedBadges: string[];
   totalMealsLogged: number;
   totalWorkoutsCompleted: number;
+  totalLogins: number;
 }
 
 export interface Badge {
@@ -41,7 +43,7 @@ export interface GamificationState {
 // =====================================================
 
 export interface GamificationEvent {
-  type: 'meal_logged' | 'workout_completed' | 'streak_check';
+  type: 'meal_logged' | 'workout_completed' | 'streak_check' | 'daily_login';
   timestamp: string;
   points?: number;
   badgeUnlocked?: string;
@@ -55,6 +57,7 @@ export interface GamificationEvent {
 export const GAMIFICATION_CONSTANTS = {
   POINTS_PER_MEAL: 10,
   POINTS_PER_WORKOUT: 20,
+  POINTS_PER_LOGIN: 10,
   POINTS_PER_LEVEL: 100,
   STREAK_CHECK_HOURS: 24,
   STORAGE_KEY: 'nutrisnap_gamification',

@@ -20,9 +20,11 @@ class GamificationService {
       level: 1,
       streak: 0,
       lastActivityDate: '',
+      lastLoginDate: '',
       unlockedBadges: [],
       totalMealsLogged: 0,
       totalWorkoutsCompleted: 0,
+      totalLogins: 0,
     };
   }
 
@@ -135,6 +137,36 @@ class GamificationService {
     };
   }
 
+  // Award points for daily login (once per day)
+  awardDailyLoginPoints(): GamificationEvent | null {
+    const data = this.loadData();
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if user already logged in today
+    if (data.lastLoginDate === today) {
+      return null; // No reward, already logged in today
+    }
+
+    const updatedData = {
+      ...data,
+      points: data.points + GAMIFICATION_CONSTANTS.POINTS_PER_LOGIN,
+      lastLoginDate: today,
+      totalLogins: data.totalLogins + 1,
+    };
+
+    const newLevel = this.calculateLevel(updatedData.points);
+    const levelUp = newLevel > data.level;
+
+    this.saveData(updatedData);
+
+    return {
+      type: 'daily_login',
+      timestamp: new Date().toISOString(),
+      points: GAMIFICATION_CONSTANTS.POINTS_PER_LOGIN,
+      levelUp,
+    };
+  }
+
   // Check for badge unlocks
   checkBadgeUnlocks(): string[] {
     const data = this.loadData();
@@ -220,6 +252,22 @@ class GamificationService {
         emoji: '⭐',
         condition: (data) => data.level >= 5,
         pointsReward: 50,
+      },
+      {
+        id: 'daily_login_streak',
+        name: 'Daily Visitor',
+        description: 'Logged in 5 days in a row!',
+        emoji: '📅',
+        condition: (data) => data.totalLogins >= 5,
+        pointsReward: 25,
+      },
+      {
+        id: 'login_master',
+        name: 'Login Master',
+        description: 'Logged in 30 days total!',
+        emoji: '🏅',
+        condition: (data) => data.totalLogins >= 30,
+        pointsReward: 100,
       },
     ];
   }

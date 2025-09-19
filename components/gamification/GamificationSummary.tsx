@@ -54,7 +54,7 @@ const GamificationSummary: React.FC<GamificationSummaryProps> = ({ data }) => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-3 mb-4">
         <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
           <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
             {data.streak}
@@ -72,6 +72,12 @@ const GamificationSummary: React.FC<GamificationSummaryProps> = ({ data }) => {
             {data.totalWorkoutsCompleted}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Workouts</div>
+        </div>
+        <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+          <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+            {data.totalLogins}
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">Logins</div>
         </div>
       </div>
 

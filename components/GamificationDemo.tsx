@@ -116,7 +116,7 @@ const GamificationDemo: React.FC = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-5 gap-4 mb-6">
             <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {data.streak}
@@ -136,6 +136,12 @@ const GamificationDemo: React.FC = () => {
               <div className="text-sm text-gray-600 dark:text-gray-400">Workouts</div>
             </div>
             <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {data.totalLogins}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Logins</div>
+            </div>
+            <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {unlockedBadges.length}
               </div>
@@ -144,20 +150,49 @@ const GamificationDemo: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <button
               onClick={handleMealLogged}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg text-lg font-medium transition-colors flex items-center justify-center"
+              className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg text-lg font-medium transition-colors flex items-center justify-center"
             >
               <span className="text-xl mr-2">🍽️</span>
               Log Meal (+10 pts)
             </button>
             <button
               onClick={handleWorkoutCompleted}
-              className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg text-lg font-medium transition-colors flex items-center justify-center"
+              className="bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg text-lg font-medium transition-colors flex items-center justify-center"
             >
               <span className="text-xl mr-2">💪</span>
               Complete Workout (+20 pts)
+            </button>
+            <button
+              onClick={() => {
+                const loginEvent = gamificationService.awardDailyLoginPoints();
+                if (loginEvent) {
+                  const newBadges = gamificationService.checkBadgeUnlocks();
+                  loadData();
+                  
+                  if (loginEvent.levelUp) {
+                    setShowNotification('🎉 Level Up!');
+                    setTimeout(() => setShowNotification(null), 3000);
+                  }
+                  
+                  if (newBadges.length > 0) {
+                    setShowNotification(`🏆 Badge Unlocked: ${newBadges[0]}`);
+                    setTimeout(() => setShowNotification(null), 3000);
+                  }
+                  
+                  setShowNotification('🎉 Daily Login Reward! +10 points');
+                  setTimeout(() => setShowNotification(null), 3000);
+                } else {
+                  setShowNotification('Already logged in today!');
+                  setTimeout(() => setShowNotification(null), 2000);
+                }
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-lg font-medium transition-colors flex items-center justify-center"
+            >
+              <span className="text-xl mr-2">🔑</span>
+              Daily Login (+10 pts)
             </button>
           </div>
 
@@ -200,6 +235,7 @@ const GamificationDemo: React.FC = () => {
           <div className="space-y-3 text-gray-600 dark:text-gray-400">
             <p>• Click "Log Meal" to simulate logging a meal (+10 points)</p>
             <p>• Click "Complete Workout" to simulate finishing a workout (+20 points)</p>
+            <p>• Click "Daily Login" to simulate daily login reward (+10 points, once per day)</p>
             <p>• Watch your level progress bar fill up</p>
             <p>• Unlock badges by reaching certain milestones</p>
             <p>• Your progress is saved in localStorage and persists across page refreshes</p>

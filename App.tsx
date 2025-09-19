@@ -25,6 +25,7 @@ function App() {
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupabaseAvailable, setIsSupabaseAvailable] = useState(true);
+  const [userEmail, setUserEmail] = useState<string>('');
 
 
   // Initialize app
@@ -54,9 +55,11 @@ function App() {
         
         if (user.data.user) {
           setCurrentUserId(user.data.user.id);
+          setUserEmail(user.data.user.email || 'Guest');
           setIsAuthenticated(true);
           await loadUserData(user.data.user.id, user.data.user.email);
         } else {
+          setUserEmail('Guest');
           console.log('🚫 No authenticated user found, showing auth view');
         }
       } catch (error) {
@@ -86,12 +89,14 @@ function App() {
         
         if (event === 'SIGNED_IN' && session?.user) {
           setCurrentUserId(session.user.id);
+          setUserEmail(session.user.email || 'Guest');
           setIsAuthenticated(true);
           await loadUserData(session.user.id, session.user.email);
           // Track sign in
           trackPageView('NutriSnap - Dashboard', window.location.href);
         } else if (event === 'SIGNED_OUT') {
           setCurrentUserId(null);
+          setUserEmail('Guest');
           setIsAuthenticated(false);
           setUserProfile(null);
           setMealEntries([]);
@@ -149,6 +154,7 @@ function App() {
 
       if (result.data.user) {
         setCurrentUserId(result.data.user.id);
+        setUserEmail(result.data.user.email || 'Guest');
         setIsAuthenticated(true);
         await loadUserData(result.data.user.id);
       }
@@ -318,6 +324,7 @@ function App() {
                 <DashboardView
                   entries={todaysEntries.entries}
                   profile={userProfile}
+                  userEmail={userEmail}
                   workoutCalories={todaysWorkoutCalories}
                   netCalories={netCalories}
                   caloriesLeft={caloriesLeft}
