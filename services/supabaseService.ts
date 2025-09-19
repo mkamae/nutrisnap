@@ -46,28 +46,6 @@ export async function withTimeout<T>(promise: Promise<T>, label: string, timeout
   }
 }
 
-// Lightweight connectivity health check
-export const healthCheckSupabase = async () => {
-  try {
-    console.log('🩺 Running Supabase health check...');
-    // Use a tiny query on meals table by default
-    const result = await withTimeout(
-      (async () => await supabase.from('meals').select('id').limit(1))(),
-      'HealthCheck: select meals id',
-      15000 // Increased timeout to 15 seconds
-    );
-    const { error } = result as any;
-    if (error) {
-      console.warn('⚠️ Health check reported error:', error.message);
-      return { ok: false, error: error.message };
-    }
-    console.log('✅ Supabase health check OK');
-    return { ok: true };
-  } catch (e: any) {
-    console.error('❌ Supabase unreachable:', e.message);
-    return { ok: false, error: e.message };
-  }
-};
 
 // Test connection function with timeout
 export const testSupabaseConnection = async () => {
