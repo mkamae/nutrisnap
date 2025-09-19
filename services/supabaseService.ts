@@ -240,10 +240,14 @@ export const foodService = {
 export const demoWorkoutService = {
   async getDemoWorkouts(): Promise<DemoWorkout[]> {
     try {
-      const { data, error } = await supabase
-        .from('demo_workouts')
-        .select('*')
-        .order('category', { ascending: true });
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('demo_workouts')
+          .select('*')
+          .order('category', { ascending: true }))(),
+        'Get demo workouts',
+        12000
+      ) as any;
 
       if (error) {
         console.error('Error fetching demo workouts:', error);
@@ -259,11 +263,15 @@ export const demoWorkoutService = {
 
   async getDemoWorkoutsByCategory(category: string): Promise<DemoWorkout[]> {
     try {
-      const { data, error } = await supabase
-        .from('demo_workouts')
-        .select('*')
-        .eq('category', category)
-        .order('name');
+      const { data, error } = await withTimeout(
+        (async () => await supabase
+          .from('demo_workouts')
+          .select('*')
+          .eq('category', category)
+          .order('name'))(),
+        'Get demo workouts by category',
+        12000
+      ) as any;
 
       if (error) {
         console.error('Error fetching demo workouts by category:', error);
