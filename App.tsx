@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase, mealService, workoutSessionService, healthCheckSupabase, userProfileService } from './services/supabaseService';
+import { supabase, mealService, workoutSessionService, userProfileService } from './services/supabaseService';
 import { MealEntry, WorkoutSession, UserProfile } from './types';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import { gamificationService } from './services/gamificationService';
@@ -13,9 +13,6 @@ import WorkoutPlanDetail from './components/WorkoutPlanDetail';
 import WorkoutPlayer from './components/WorkoutPlayer';
 import ReportsView from './components/ReportsView';
 import BottomNav from './components/BottomNav';
-import OfflineMode from './components/OfflineMode';
-import GamificationDemo from './components/GamificationDemo';
-import DatabaseAudit from './components/DatabaseAudit';
 
 
 function App() {
@@ -25,7 +22,6 @@ function App() {
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSupabaseAvailable, setIsSupabaseAvailable] = useState(true);
   const [userEmail, setUserEmail] = useState<string>('');
 
 
@@ -38,19 +34,6 @@ function App() {
         // Initialize Google Analytics
         initializeAnalytics();
         
-        // Health check
-        try {
-          const hc = await healthCheckSupabase();
-          if (!hc.ok) {
-            console.warn('⚠️ Supabase health check failed:', hc.error);
-            console.log('🔄 Continuing with offline mode - gamification will still work');
-            setIsSupabaseAvailable(false);
-          }
-        } catch (error) {
-          console.warn('⚠️ Supabase health check error:', error);
-          console.log('🔄 Continuing with offline mode - gamification will still work');
-          setIsSupabaseAvailable(false);
-        }
         const user = await supabase.auth.getUser();
         console.log('👤 Current user:', user.data.user ? user.data.user.id : 'No user');
         
@@ -291,18 +274,6 @@ function App() {
     );
   }
 
-  // Show offline mode if Supabase is unavailable
-  if (!isSupabaseAvailable) {
-    // Check if user wants to see gamification demo
-    if (window.location.hash === '#gamification-demo') {
-      return <GamificationDemo />;
-    }
-    // Check if user wants to see database audit
-    if (window.location.hash === '#database-audit') {
-      return <DatabaseAudit />;
-    }
-    return <OfflineMode />;
-  }
 
   // Show auth view for unauthenticated users
   if (!isAuthenticated) {
