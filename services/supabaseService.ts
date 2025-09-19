@@ -47,49 +47,78 @@ export async function withTimeout<T>(promise: Promise<T>, label: string, timeout
 }
 
 // -----------------------------------------------------
-// Local fallback data to keep UI functional if Supabase
-// is slow/unavailable for demo workouts
+// Connectivity audit utility
 // -----------------------------------------------------
-const LOCAL_DEMO_WORKOUTS: DemoWorkout[] = [
-  {
-    id: 'local-1',
-    name: 'Jumping Jacks',
-    category: 'cardio',
-    duration_seconds: 60,
-    instructions: 'Keep a steady pace and land softly.',
-    muscle_groups: ['full body'],
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'local-2',
-    name: 'Bodyweight Squats',
-    category: 'strength',
-    reps: 12,
-    sets: 3,
-    instructions: 'Keep chest up, push hips back, and track knees over toes.',
-    muscle_groups: ['quadriceps', 'glutes', 'hamstrings'],
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'local-3',
-    name: 'Plank Hold',
-    category: 'core',
-    duration_seconds: 45,
-    instructions: 'Maintain a straight line from head to heels.',
-    muscle_groups: ['core'],
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'local-4',
-    name: 'Push-ups',
-    category: 'strength',
-    reps: 10,
-    sets: 3,
-    instructions: 'Keep elbows at ~45°, engage core, full range of motion.',
-    muscle_groups: ['chest', 'triceps', 'shoulders'],
-    created_at: new Date().toISOString()
+export async function auditSupabaseConnectivity() {
+  const report: any = {
+    timestamp: new Date().toISOString(),
+    url: supabaseUrl,
+    anonKeyPresent: Boolean(supabaseAnonKey),
+    checks: [] as Array<{ name: string; ok: boolean; ms: number; note?: string; error?: string }>
+  };
+
+  async function run(name: string, fn: () => Promise<void>) {
+    const start = performance.now();
+    try {
+      await fn();
+      report.checks.push({ name, ok: true, ms: Math.round(performance.now() - start) });
+    } catch (e: any) {
+      report.checks.push({ name, ok: false, ms: Math.round(performance.now() - start), error: e?.message || String(e) });
+    }
   }
-];
+
+  // 1) DNS/Network reachability to Supabase REST
+  await run('REST reachability', async () => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(`${supabaseUrl}/rest/v1/`, { method: 'GET', signal: ctrl.signal });
+    clearTimeout(t);
+    // 200/401/404 are all fine for reachability
+    if (!res.ok && ![401, 404].includes(res.status)) throw new Error(`HTTP ${res.status}`);
+  });
+
+  // 2) Auth state
+  await run('Auth getUser', async () => {
+    const u = await supabase.auth.getUser();
+    if (u.error) throw new Error(u.error.message);
+  });
+
+  // 3) Simple table probes (existence/permission/latency)
+  await run('Probe: demo_workouts', async () => {
+    const { error } = await withTimeout(
+      (async () => await supabase.from('demo_workouts').select('id').limit(1))(),
+      'Audit: demo_workouts',
+      8000
+    ) as any;
+    if (error) throw new Error(error.message);
+  });
+
+  await run('Probe: meals', async () => {
+    const { error } = await withTimeout(
+      (async () => await supabase.from('meals').select('id').limit(1))(),
+      'Audit: meals',
+      8000
+    ) as any;
+    if (error) throw new Error(error.message);
+  });
+
+  // 4) Storage/CORS quick ping (optional)
+  await run('Edge ping', async () => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(`${supabaseUrl}/status`, { method: 'GET', signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok && ![401, 404].includes(res.status)) throw new Error(`HTTP ${res.status}`);
+  });
+
+  return report;
+}
+
+// Expose quick access in the browser console
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(typeof window !== 'undefined' ? (window as any).__supabaseAudit = auditSupabaseConnectivity : undefined);
+
+// Note: No local fallbacks — app requires live Supabase connectivity
 
 
 // Test connection function with timeout
@@ -295,16 +324,13 @@ export const demoWorkoutService = {
       ) as any;
 
       if (error) {
-        console.error('Error fetching demo workouts:', error);
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
       }
 
-      // If Supabase returns no rows, fall back to local list
-      return (data && data.length > 0) ? data : LOCAL_DEMO_WORKOUTS;
+      return data || [];
     } catch (error) {
       console.error('Error in getDemoWorkouts:', error);
-      // Fallback to local demo list on timeout/network errors
-      return LOCAL_DEMO_WORKOUTS;
+    throw error;
     }
   },
 
@@ -321,15 +347,13 @@ export const demoWorkoutService = {
       ) as any;
 
       if (error) {
-        console.error('Error fetching demo workouts by category:', error);
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
       }
 
-      const list = (data && data.length > 0) ? data : LOCAL_DEMO_WORKOUTS;
-      return list.filter(w => w.category === category);
+      return (data || []).filter((w: any) => w.category === category);
     } catch (error) {
       console.error('Error in getDemoWorkoutsByCategory:', error);
-      return LOCAL_DEMO_WORKOUTS.filter(w => w.category === category);
+    throw error;
     }
   }
 };
