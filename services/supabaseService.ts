@@ -46,6 +46,51 @@ export async function withTimeout<T>(promise: Promise<T>, label: string, timeout
   }
 }
 
+// -----------------------------------------------------
+// Local fallback data to keep UI functional if Supabase
+// is slow/unavailable for demo workouts
+// -----------------------------------------------------
+const LOCAL_DEMO_WORKOUTS: DemoWorkout[] = [
+  {
+    id: 'local-1',
+    name: 'Jumping Jacks',
+    category: 'cardio',
+    duration_seconds: 60,
+    instructions: 'Keep a steady pace and land softly.',
+    muscle_groups: ['full body'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'local-2',
+    name: 'Bodyweight Squats',
+    category: 'strength',
+    reps: 12,
+    sets: 3,
+    instructions: 'Keep chest up, push hips back, and track knees over toes.',
+    muscle_groups: ['quadriceps', 'glutes', 'hamstrings'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'local-3',
+    name: 'Plank Hold',
+    category: 'core',
+    duration_seconds: 45,
+    instructions: 'Maintain a straight line from head to heels.',
+    muscle_groups: ['core'],
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'local-4',
+    name: 'Push-ups',
+    category: 'strength',
+    reps: 10,
+    sets: 3,
+    instructions: 'Keep elbows at ~45°, engage core, full range of motion.',
+    muscle_groups: ['chest', 'triceps', 'shoulders'],
+    created_at: new Date().toISOString()
+  }
+];
+
 
 // Test connection function with timeout
 export const testSupabaseConnection = async () => {
@@ -254,10 +299,12 @@ export const demoWorkoutService = {
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
       }
 
-      return data;
+      // If Supabase returns no rows, fall back to local list
+      return (data && data.length > 0) ? data : LOCAL_DEMO_WORKOUTS;
     } catch (error) {
       console.error('Error in getDemoWorkouts:', error);
-      throw error;
+      // Fallback to local demo list on timeout/network errors
+      return LOCAL_DEMO_WORKOUTS;
     }
   },
 
@@ -278,10 +325,11 @@ export const demoWorkoutService = {
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
       }
 
-      return data;
+      const list = (data && data.length > 0) ? data : LOCAL_DEMO_WORKOUTS;
+      return list.filter(w => w.category === category);
     } catch (error) {
       console.error('Error in getDemoWorkoutsByCategory:', error);
-      throw error;
+      return LOCAL_DEMO_WORKOUTS.filter(w => w.category === category);
     }
   }
 };
