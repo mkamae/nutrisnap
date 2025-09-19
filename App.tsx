@@ -6,6 +6,7 @@ import { initializeAnalytics, trackPageView } from './utils/analytics';
 import { gamificationService } from './services/gamificationService';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
+import LandingPage from './components/LandingPage';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import GuidedWorkoutsView from './components/GuidedWorkoutsView';
@@ -275,12 +276,16 @@ function App() {
   }
 
 
-  // Show auth view for unauthenticated users
+  // Public landing page for unauthenticated users
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <AuthView onLogin={handleLogin} />
-      </div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<AuthView onLogin={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
     );
   }
 
@@ -293,7 +298,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="pb-20">
           <Routes>
-            {/* UI/UX CLEANUP: Simplified routing - only core features */}
+            {/* Authenticated routes */}
             <Route 
               path="/" 
               element={
