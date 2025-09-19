@@ -13,6 +13,8 @@ import WorkoutPlanDetail from './components/WorkoutPlanDetail';
 import WorkoutPlayer from './components/WorkoutPlayer';
 import ReportsView from './components/ReportsView';
 import BottomNav from './components/BottomNav';
+import OfflineMode from './components/OfflineMode';
+import GamificationDemo from './components/GamificationDemo';
 
 
 function App() {
@@ -22,6 +24,7 @@ function App() {
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSupabaseAvailable, setIsSupabaseAvailable] = useState(true);
 
 
   // Initialize app
@@ -34,9 +37,17 @@ function App() {
         initializeAnalytics();
         
         // Health check
-        const hc = await healthCheckSupabase();
-        if (!hc.ok) {
-          console.warn('⚠️ Supabase health check failed:', hc.error);
+        try {
+          const hc = await healthCheckSupabase();
+          if (!hc.ok) {
+            console.warn('⚠️ Supabase health check failed:', hc.error);
+            console.log('🔄 Continuing with offline mode - gamification will still work');
+            setIsSupabaseAvailable(false);
+          }
+        } catch (error) {
+          console.warn('⚠️ Supabase health check error:', error);
+          console.log('🔄 Continuing with offline mode - gamification will still work');
+          setIsSupabaseAvailable(false);
         }
         const user = await supabase.auth.getUser();
         console.log('👤 Current user:', user.data.user ? user.data.user.id : 'No user');
@@ -271,6 +282,15 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  // Show offline mode if Supabase is unavailable
+  if (!isSupabaseAvailable) {
+    // Check if user wants to see gamification demo
+    if (window.location.hash === '#gamification-demo') {
+      return <GamificationDemo />;
+    }
+    return <OfflineMode />;
   }
 
   // Show auth view for unauthenticated users
