@@ -314,14 +314,10 @@ export const foodService = {
 export const demoWorkoutService = {
   async getDemoWorkouts(): Promise<DemoWorkout[]> {
     try {
-      const { data, error } = await withTimeout(
-        (async () => await supabase
-          .from('demo_workouts')
-          .select('*')
-          .order('category', { ascending: true }))(),
-        'Get demo workouts',
-        12000
-      ) as any;
+      const { data, error } = await supabase
+        .from('demo_workouts')
+        .select('*')
+        .order('category', { ascending: true });
 
       if (error) {
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
@@ -336,15 +332,11 @@ export const demoWorkoutService = {
 
   async getDemoWorkoutsByCategory(category: string): Promise<DemoWorkout[]> {
     try {
-      const { data, error } = await withTimeout(
-        (async () => await supabase
-          .from('demo_workouts')
-          .select('*')
-          .eq('category', category)
-          .order('name'))(),
-        'Get demo workouts by category',
-        12000
-      ) as any;
+      const { data, error } = await supabase
+        .from('demo_workouts')
+        .select('*')
+        .eq('category', category)
+        .order('name');
 
       if (error) {
         throw new Error(`Failed to fetch demo workouts: ${error.message}`);
