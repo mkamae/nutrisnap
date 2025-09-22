@@ -1,5 +1,7 @@
 import * as React from 'react';
-import clsx from 'clsx';
+function cx(...args: Array<string | undefined | false>) {
+  return args.filter(Boolean).join(' ');
+}
 
 type Variant = 'default' | 'secondary' | 'outline' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
@@ -27,7 +29,7 @@ const sizes: Record<Size, string> = {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'md', ...props }, ref) => {
     return (
-      <button ref={ref} className={clsx(base, variants[variant], sizes[size], className)} {...props} />
+      <button ref={ref} className={cx(base, variants[variant], sizes[size], className)} {...props} />
     );
   }
 );
