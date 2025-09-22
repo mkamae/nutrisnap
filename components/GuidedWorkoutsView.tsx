@@ -38,7 +38,7 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
       console.log('🔍 Loading programmed workouts...');
       
       const data = await demoWorkoutService.getDemoWorkouts();
-      console.log('✅ Loaded workouts:', data);
+      console.log('Supabase demo_workouts query result:', data);
       setWorkouts(data);
       
       // Group exercises into time-based sessions
@@ -108,11 +108,9 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
 
   if (isLoading) {
     return (
-      <LoadingSpinner 
-        size="lg" 
-        message="Loading workout sessions..." 
-        fullScreen 
-      />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="text-center text-gray-600 dark:text-gray-400">Loading workout sessions...</div>
+      </div>
     );
   }
 
@@ -307,7 +305,6 @@ const GuidedWorkoutsView: React.FC<GuidedWorkoutsViewProps> = ({ currentUserId }
             ))}
           </div>
         ) : (
-          /* Empty State */
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">

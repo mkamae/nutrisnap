@@ -58,12 +58,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({ currentUserId }) => {
 
       try {
         meals = await mealService.getMealsByDateRange(currentUserId, startDateStr, endDateStr);
+        console.log('Supabase meals query result:', meals);
       } catch (error: any) {
         console.error('Error loading meals for reports:', error?.message || error);
       }
 
       try {
         workoutSessions = await workoutSessionService.getWorkoutSessions(currentUserId);
+        console.log('Supabase workout_sessions query result:', workoutSessions);
       } catch (error: any) {
         console.error('Error loading workout sessions for reports:', error?.message || error);
       }
