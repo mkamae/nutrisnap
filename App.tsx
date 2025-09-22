@@ -14,6 +14,7 @@ import WorkoutPlanDetail from './components/WorkoutPlanDetail';
 import WorkoutPlayer from './components/WorkoutPlayer';
 import ReportsView from './components/ReportsView';
 import BottomNav from './components/BottomNav';
+import ScanNutritionView from './components/ScanNutritionView';
 
 
 function App() {
@@ -366,6 +367,7 @@ function App() {
                 />
               } 
             />
+            <Route path="/scan" element={<ScanNutritionView />} />
             
             {/* Catch all route - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/" replace />} />
