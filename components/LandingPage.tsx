@@ -18,7 +18,11 @@ const Card: React.FC<React.PropsWithChildren<{ title?: string; icon?: React.Reac
   </div>
 );
 
-const LandingPage: React.FC = () => {
+interface LandingProps {
+  onLogin: (email: string, password: string, isSignUp: boolean) => Promise<void>;
+}
+
+const LandingPage: React.FC<LandingProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-gray-900 dark:text-white">
@@ -33,7 +37,7 @@ const LandingPage: React.FC = () => {
           </p>
           <div className="mt-10 max-w-md mx-auto">
             {/* Inline authentication to simplify flow */}
-            <AuthView onLogin={() => navigate('/')} />
+            <AuthView onLogin={onLogin} />
           </div>
         </motion.div>
         {/* subtle shapes */}

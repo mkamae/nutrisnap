@@ -289,8 +289,8 @@ function App() {
     return (
       <Router>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage onLogin={handleLogin} />} />
+          <Route path="/auth" element={<LandingPage onLogin={handleLogin} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
