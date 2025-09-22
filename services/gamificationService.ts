@@ -5,6 +5,7 @@ import {
   GamificationEvent,
   GAMIFICATION_CONSTANTS 
 } from '../types/gamification';
+import { fetchGamification, upsertGamification } from './gamificationSync';
 
 // =====================================================
 // GAMIFICATION SERVICE
@@ -49,6 +50,42 @@ class GamificationService {
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
       console.error('Error saving gamification data:', error);
+    }
+  }
+
+  // Load from DB for a user (fallback to local if missing)
+  async loadForUser(userId: string): Promise<GamificationData> {
+    try {
+      const db = await fetchGamification(userId);
+      if (db) {
+        // Merge with defaults to future-proof fields
+        const merged: GamificationData = { ...this.getDefaultData(), ...db } as any;
+        this.saveData(merged); // keep local mirror
+        return merged;
+      }
+    } catch (e) {
+      console.warn('Gamification DB load failed, using local:', e);
+    }
+    return this.loadData();
+  }
+
+  // Persist to DB for a user (optimistic UI: caller updates UI first, then call this)
+  async persistForUser(userId: string, data: GamificationData): Promise<void> {
+    try {
+      await upsertGamification(userId, {
+        points: data.points,
+        level: data.level,
+        streak: data.streak,
+        lastActivityDate: data.lastActivityDate,
+        lastLoginDate: data.lastLoginDate,
+        unlockedBadges: data.unlockedBadges,
+        totalMealsLogged: data.totalMealsLogged,
+        totalWorkoutsCompleted: data.totalWorkoutsCompleted,
+        totalLogins: data.totalLogins,
+      });
+      this.saveData(data);
+    } catch (e) {
+      console.error('Gamification sync failed (kept local):', e);
     }
   }
 

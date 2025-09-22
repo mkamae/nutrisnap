@@ -4,6 +4,7 @@ import { supabase, mealService, workoutSessionService, userProfileService } from
 import { MealEntry, WorkoutSession, UserProfile } from './types';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import { gamificationService } from './services/gamificationService';
+import { fetchGamification } from './services/gamificationSync';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import LandingPage from './components/LandingPage';
@@ -44,6 +45,12 @@ function App() {
           setUserEmail(user.data.user.email || 'Guest');
           setIsAuthenticated(true);
           await loadUserData(user.data.user.id, user.data.user.email);
+          // Load gamification from DB for this user (and mirror locally)
+          try {
+            await gamificationService.loadForUser(user.data.user.id);
+          } catch (e) {
+            console.warn('Gamification DB load error:', e);
+          }
         } else {
           setUserEmail('Guest');
           console.log('🚫 No authenticated user found, showing auth view');

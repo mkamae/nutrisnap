@@ -10,6 +10,21 @@ import {
   UserProfile
 } from '../types';
 
+// Gamification types scoped here to avoid coupling
+export interface GamificationDBRecord {
+  user_id: string;
+  points: number;
+  level: number;
+  streak: number;
+  last_activity_date: string | null;
+  last_login_date: string | null;
+  unlocked_badges: any[];
+  total_meals_logged: number;
+  total_workouts_completed: number;
+  total_logins: number;
+  updated_at?: string;
+}
+
 // Access environment variables directly
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
