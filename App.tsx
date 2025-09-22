@@ -7,7 +7,7 @@ import { gamificationService } from './services/gamificationService';
 import { fetchGamification } from './services/gamificationSync';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
-import LandingPage from './components/LandingPage';
+// Landing page removed: auth page serves as landing
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import GuidedWorkoutsView from './components/GuidedWorkoutsView';
@@ -284,12 +284,12 @@ function App() {
   }
 
 
-  // Public landing page for unauthenticated users
+  // Public landing page for unauthenticated users: show AuthView at '/'
   if (!isAuthenticated) {
     return (
       <Router>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<AuthView onLogin={handleLogin} />} />
           <Route path="/auth" element={<AuthView onLogin={handleLogin} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -306,7 +306,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="pb-20">
           <Routes>
-            {/* Authenticated routes */}
+            {/* Authenticated routes: '/' goes to dashboard */}
             <Route 
               path="/" 
               element={
