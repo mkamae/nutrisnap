@@ -7,7 +7,7 @@ import { gamificationService } from './services/gamificationService';
 import { fetchGamification } from './services/gamificationSync';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
-// Landing page removed: auth page serves as landing
+import LandingPage from './components/LandingPage';
 import AddMealView from './components/AddMealView';
 import ProfileView from './components/ProfileView';
 import GuidedWorkoutsView from './components/GuidedWorkoutsView';
@@ -284,13 +284,13 @@ function App() {
   }
 
 
-  // Public landing page for unauthenticated users: show AuthView at '/'
+  // Public landing page for unauthenticated users: show LandingPage with inline Auth
   if (!isAuthenticated) {
     return (
       <Router>
         <Routes>
-          <Route path="/" element={<AuthView onLogin={handleLogin} />} />
-          <Route path="/auth" element={<AuthView onLogin={handleLogin} />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<LandingPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

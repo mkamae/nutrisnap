@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import Progress from './ui/Progress';
 import { Trophy, Salad, ChartBar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AuthView from './AuthView';
 
 const Section: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className, children }) => (
   <section className={`px-6 md:px-8 py-14 md:py-20 ${className || ''}`}>{children}</section>
@@ -30,8 +31,9 @@ const LandingPage: React.FC = () => {
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
             Track meals, see progress, and stay motivated with gamification.
           </p>
-          <div className="mt-8 flex justify-center">
-            <Button size="lg" onClick={() => navigate('/auth')}>Start Tracking</Button>
+          <div className="mt-10 max-w-md mx-auto">
+            {/* Inline authentication to simplify flow */}
+            <AuthView onLogin={() => navigate('/')} />
           </div>
         </motion.div>
         {/* subtle shapes */}
@@ -109,7 +111,7 @@ const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Try Nutrisnap Today</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">Your future self will thank you.</p>
-          <Button size="lg" variant="secondary" onClick={() => navigate('/auth')}>Try Nutrisnap Today</Button>
+          <Button size="lg" variant="secondary" onClick={() => navigate('/')}>Try Nutrisnap Today</Button>
         </div>
         <motion.div aria-hidden className="pointer-events-none absolute inset-x-0 -bottom-20 h-40 bg-gradient-to-t from-green-500/10 to-transparent" />
       </Section>
